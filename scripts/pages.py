@@ -763,11 +763,19 @@ class Gen:
         ex = [r for r in self.J("execution.json", []) if r["player"] == name]
         av = [r for r in self.J("avoidable.json", []) if r["player"] == name]
         dj = [d for d in self.J("deaths.json", []) if d["player"] == name]
-        if not ex:
-            return
-        specs = sorted({r["spec"] for r in ex})
-        role = ex[0]["role"]
         ph = ",".join("?" for _ in self.codes)
+        # Roster truth = composition (OUR reports only — composition also
+        # holds top-parse fights). execution.json only covers specs present
+        # in spec_kpis: a player without KPI rows still gets a card
+        # (verdict, deaths, avoidable, bench) — never silently dropped.
+        comp = [dict(r) for r in self.be.con.execute(
+            f"SELECT report, fight_id, spec, role FROM composition "
+            f"WHERE player_name=? AND report IN ({ph})", [name, *self.codes])]
+        if not comp:
+            return
+        specs = sorted({r["spec"] for r in (ex or comp) if r.get("spec")})
+        role = (ex[0]["role"] if ex else comp[0]["role"])
+        pulls_played = len({(r["report"], r["fight_id"]) for r in comp})
         kill_fids = {(r["report"], r["fight_id"]) for r in self.be.con.execute(
             f"SELECT report, fight_id FROM pull WHERE report IN ({ph}) AND kill=1",
             self.codes)}
@@ -790,7 +798,7 @@ class Gen:
 <span>{L['deaths_on_kill']}</span></div>
 <div class="stat"><b class="{'r' if d_first else 'g'}">{len(d_first)}</b>\
 <span>{L['first_deaths_wipe']}</span></div>
-<div class="stat"><b>{len({(r.get('report'), r['fight_id']) for r in ex})}</b>\
+<div class="stat"><b>{pulls_played}</b>\
 <span>{L['pulls_played']}</span></div>
 {self.frag('players', name, 'stats_extra.html')}
 </div></header><main>""")
