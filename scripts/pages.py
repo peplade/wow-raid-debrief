@@ -492,8 +492,9 @@ class Gen:
 
     def encounters(self):
         return [dict(r) for r in self.be.con.execute(
-            "SELECT DISTINCT encounter_id, boss, difficulty FROM pull "
-            "WHERE report=? ORDER BY MIN(start_time)", (self.code,))]
+            "SELECT encounter_id, boss, difficulty FROM pull WHERE report=? "
+            "GROUP BY encounter_id, boss, difficulty ORDER BY MIN(start_time)",
+            (self.code,))]
 
     def page_boss(self, enc_id, diff, log_name):
         L = self.L
