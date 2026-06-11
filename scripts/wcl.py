@@ -127,6 +127,16 @@ _TOKEN = None
 _LAST = [0.0]
 THROTTLE_S = 0.20   # gentle spacing between live calls
 
+# Seamless quota management (WCL rateLimitData: points per rolling hour).
+# Every QUOTA_CHECK_EVERY live calls the client polls rateLimitData (~1 pt)
+# and AUTO-PAUSES until the hourly reset when spent > QUOTA_SOFT_PCT of the
+# limit. A 429 sleeps until reset instead of giving up — abandoned requests
+# would otherwise produce silently-partial extractions.
+QUOTA_CHECK_EVERY = int(os.environ.get("WCL_QUOTA_CHECK_EVERY", "150"))
+QUOTA_SOFT_PCT = float(os.environ.get("WCL_QUOTA_SOFT_PCT", "0.85"))
+_LIVE_N = [0]          # live calls since process start
+_QUOTA_GUARD = [False]  # re-entrancy guard (quota checks use the same client)
+
 OAUTH_URL = "https://www.warcraftlogs.com/oauth/token"
 # MoP Classic logs live on the classic endpoint; the www OAuth token works here.
 API_URL = "https://classic.warcraftlogs.com/api/v2/client"
@@ -150,28 +160,83 @@ def _token():
     return _TOKEN
 
 
-def _live_gql(query, variables):
+def _post_gql(query, variables):
+    """One throttled POST, no quota logic (used by the quota check itself)."""
     body = json.dumps({"query": query, "variables": variables}).encode()
-    for attempt in range(4):
-        dt = time.monotonic() - _LAST[0]
-        if dt < THROTTLE_S:
-            time.sleep(THROTTLE_S - dt)
-        req = urllib.request.Request(API_URL, data=body)
-        req.add_header("Authorization", "Bearer " + _token())
-        req.add_header("Content-Type", "application/json")
-        try:
-            with urllib.request.urlopen(req, timeout=60) as r:
-                _LAST[0] = time.monotonic()
-                return json.load(r)
-        except urllib.error.HTTPError as e:
+    dt = time.monotonic() - _LAST[0]
+    if dt < THROTTLE_S:
+        time.sleep(THROTTLE_S - dt)
+    req = urllib.request.Request(API_URL, data=body)
+    req.add_header("Authorization", "Bearer " + _token())
+    req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
             _LAST[0] = time.monotonic()
-            if e.code in (429, 502, 503):
-                time.sleep(2 ** attempt)
-                continue
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        _LAST[0] = time.monotonic()
+        if e.code in (429, 502, 503):
+            return {"_http": e.code}
+        try:
+            return json.load(e)
+        except Exception:
+            return {"errors": [{"http": e.code}]}
+
+
+def _quota_live():
+    """Uncached rateLimitData (never goes through gql/cache: must be fresh)."""
+    r = _post_gql("{ rateLimitData { limitPerHour pointsSpentThisHour "
+                  "pointsResetIn } }", {})
+    d = r.get("data") if isinstance(r, dict) else None
+    return (d or {}).get("rateLimitData") or {}
+
+
+def _quota_pause_if_needed(force=False):
+    """Poll quota every QUOTA_CHECK_EVERY live calls (and on the very first);
+    sleep through the hourly reset when above the soft threshold."""
+    if _QUOTA_GUARD[0]:
+        return
+    _LIVE_N[0] += 1
+    if not force and _LIVE_N[0] % QUOTA_CHECK_EVERY != 1:
+        return
+    _QUOTA_GUARD[0] = True
+    try:
+        q = _quota_live()
+    finally:
+        _QUOTA_GUARD[0] = False
+    spent, limit = q.get("pointsSpentThisHour", 0), q.get("limitPerHour", 0)
+    if limit and spent >= QUOTA_SOFT_PCT * limit:
+        wait = int(q.get("pointsResetIn", 600)) + 5
+        print(f"[quota] {spent:.0f}/{limit} points (>{QUOTA_SOFT_PCT:.0%}) — "
+              f"auto-pausing {wait}s until the hourly reset, then resuming",
+              flush=True)
+        time.sleep(wait)
+
+
+def _live_gql(query, variables):
+    _quota_pause_if_needed()
+    for attempt in range(6):
+        r = _post_gql(query, variables)
+        code = r.get("_http") if isinstance(r, dict) else None
+        if code is None:
+            return r
+        if code == 429:
+            # Hourly quota exhausted: backoff cannot fix it — sleep to reset.
+            if _QUOTA_GUARD[0]:
+                return {"errors": [{"http": 429}]}
+            _QUOTA_GUARD[0] = True
             try:
-                return json.load(e)
-            except Exception:
-                return {"errors": [{"http": e.code}]}
+                q = _quota_live()
+            finally:
+                _QUOTA_GUARD[0] = False
+            wait = int(q.get("pointsResetIn", 0) or 0) + 5
+            if wait <= 5 or wait > 3700:
+                wait = 60 * (attempt + 1)      # 429 without quota info: step up
+            print(f"[quota] HTTP 429 — sleeping {wait}s until reset "
+                  f"(attempt {attempt + 1}/6)", flush=True)
+            time.sleep(wait)
+            continue
+        time.sleep(2 ** attempt)               # 502/503 transient
     return {"errors": [{"throttled": True}]}
 
 
@@ -190,6 +255,11 @@ def gql(be, query, **variables):
             "fetched_at": datetime.now(timezone.utc).isoformat(),
         }, ["query_hash"])
         be.commit()
+    elif resp.get("errors"):
+        # Loud, not silent: an uncached error means THIS extraction is partial.
+        print(f"[wcl] WARNING: request failed (not cached): "
+              f"{json.dumps(resp['errors'])[:200]} — re-run the command to "
+              f"retry this slice for free", flush=True)
     return resp
 
 
@@ -207,8 +277,7 @@ def json_field(v):
 
 
 def quota():
-    r = _live_gql("{ rateLimitData { limitPerHour pointsSpentThisHour pointsResetIn } }", {})
-    return unwrap(r, "rateLimitData") or {}
+    return _quota_live()
 
 
 # ----------------------------------------------------------------- fetchers

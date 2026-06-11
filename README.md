@@ -108,8 +108,11 @@ Scripts are plain CLIs and work without Claude too — see headers of
 ### API budget
 
 A 10-player night (~20 boss pulls + trash + top-parse benchmarking) costs
-**~1000–1500 points of the 3600/hour quota**. Every response is cached in
-sqlite: re-runs and resumes are free.
+**~1000–1500 points of the 3600/hour quota**. Quota is self-managed: the
+client polls WCL's `rateLimitData` as it goes, auto-pauses through the
+hourly reset when above 85%, and turns 429s into sleep-until-reset instead
+of failures — start the extraction and walk away. Every response is cached
+in sqlite: re-runs and resumes are free.
 
 ## Zone coverage
 

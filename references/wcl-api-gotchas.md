@@ -62,9 +62,18 @@ Read before extraction; re-read when a number looks weird.
 - ~1 point per simple request, 3600/hour
   (`{ rateLimitData { limitPerHour pointsSpentThisHour pointsResetIn } }`).
 - Full 10-player night ≈ 1000-1500 points (pulls ~17 req each, trash 2 each,
-  rankings, top details). Pause at >80%.
+  rankings, top details).
+- **Quota is hourly: backoff cannot fix a 429.** Exponential backoff gives up
+  in ~15s while the reset is up to 3600s away — the abandoned request then
+  produces a SILENTLY PARTIAL extraction (the empty result looks like "no
+  events"). Correct handling (built into `wcl.py`): poll rateLimitData every
+  ~150 live calls, auto-sleep through `pointsResetIn` above 85%, and on a
+  429 read `pointsResetIn` and sleep exactly that. rateLimitData itself must
+  NEVER be served from the response cache (stale meter).
 - Cache every response keyed sha256(query+variables); only cache real
-  successes (`data` present). Re-runs and resumes are then free.
+  successes (`data` present). Re-runs and resumes are then free. Failed
+  requests are NOT cached and print a `[wcl] WARNING` — re-running the same
+  command retries only those slices, for free.
 - The report-root query must be cache-busted daily (a `_asof` variable works)
   because a live report GROWS (multi-night lockouts).
 

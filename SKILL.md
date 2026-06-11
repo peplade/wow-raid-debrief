@@ -93,8 +93,15 @@ GATE: `python3 "$SKILL/scripts/ingest.py" status` prints `STATUS: OK`
 or investigate with the gotchas doc. The integrity check "every player has
 DamageTaken events" failing = extraction bug, NEVER "they took no damage".
 
-Budget: ~1000-1500 API points for a 10-player night (3600/h). `ingest.py
-quota` anytime.
+Quota is SELF-MANAGED at the client level (WCL `rateLimitData`): polled every
+~150 live calls, auto-pause through the hourly reset above 85%, and a 429
+sleeps until reset instead of failing. A full night costs ~1000-1500 of the
+3600 points/hour, so big extractions can legitimately pause up to ~1h —
+run `ingest.py all` in the background and watch for `[quota]` lines; never
+kill a paused run (it resumes alone, and re-runs are cache-free anyway).
+Any `[wcl] WARNING: request failed` line = that slice is partial: re-run the
+same command after the run ends (free) until the warning disappears.
+`ingest.py quota` shows the meter anytime.
 
 ## Stage 3 — zone refs
 

@@ -26,7 +26,6 @@ import argparse
 import json
 import os
 import sys
-import time
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -900,19 +899,13 @@ def cmd_quota(be, cfg, args):
 
 
 def cmd_all(be, cfg, args):
-    """Full extraction with quota guard between stages."""
-    def guard():
-        q = quota()
-        spent, limit = q.get("pointsSpentThisHour", 0), q.get("limitPerHour", 3600)
-        if spent > 0.8 * limit:
-            wait = q.get("pointsResetIn", 600)
-            print(f"quota {spent}/{limit} (>80%) — sleeping {wait}s until reset")
-            time.sleep(wait + 5)
+    """Full extraction. Quota is self-managed at the client level (wcl.py):
+    rateLimitData polled every ~150 live calls, auto-pause through the hourly
+    reset at >85%, 429 sleeps to reset — no babysitting needed."""
     for step, fn in (("session", cmd_session), ("deep", cmd_deep),
                      ("extras", cmd_extras), ("trash", cmd_trash),
                      ("tops", cmd_tops), ("top-detail", cmd_top_detail)):
         print(f"== {step} ==")
-        guard()
         fn(be, cfg, args)
     print("== status ==")
     cmd_status(be, cfg, args)

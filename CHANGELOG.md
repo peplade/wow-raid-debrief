@@ -3,6 +3,21 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [Unreleased]
+
+### Added
+- Seamless quota management in the WCL client (`wcl.py`): `rateLimitData`
+  polled every ~150 live calls, auto-pause through the hourly reset above
+  85% (`WCL_QUOTA_SOFT_PCT` / `WCL_QUOTA_CHECK_EVERY` env overrides), and
+  429 now sleeps until `pointsResetIn` instead of giving up after ~15s of
+  backoff — which used to yield silently-partial extractions. Failed
+  requests now print a loud `[wcl] WARNING` (they are never cached, so
+  re-running the command retries them for free).
+
+### Fixed
+- `pages.py` `encounters()`: aggregate misuse (ORDER BY MIN without
+  GROUP BY) crashed page generation.
+
 ## [1.0.0] — 2026-06-12
 
 Initial public release. Extracted from a battle-tested private pipeline
