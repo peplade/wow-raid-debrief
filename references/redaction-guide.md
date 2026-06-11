@@ -34,9 +34,14 @@ Counter-example (slop — never write this):
    placed in a visible "to confirm" block beats a wrong affirmation. Mark
    every deviation from ASSUMED strategy with "to confirm" — you compared to
    a standard guide, not to their actual plan.
-5. **Positives are findings.** A measured correct behavior (dispel-hold
-   pattern under the right windows, a clean kill streak, a top-matching
-   uptime) gets reported with the same rigor. A report that only blames
+5. **Positives are findings — stated as numbers, never as adjectives.**
+   A measured correct behavior (dispel-hold pattern under the right windows,
+   a clean kill streak, a top-matching uptime) gets reported with the same
+   rigor. But "flawless prep", "excellent reflexes", "he clearly knows his
+   spec" = AI-slop flattery and gets the whole report rejected (two live
+   rejections of this exact class). Write "flask+food on 210/212 kills",
+   let the reader conclude. Never compliment before criticizing as a
+   rhetorical device. A report that only blames
    reads as hostile and gets rejected; a report that praises without
    measurement reads as slop.
 6. **Collective vs individual, explicitly.** Name the player when the
@@ -55,6 +60,13 @@ Counter-example (slop — never write this):
 10. **The officers annex carries the blunt content** (rankings, individual
     discipline items, strategy questions). Public pages stay factual and
     constructive — they are readable by the players named on them.
+
+### Pre-publish probe additions
+
+- Scan the RENDERED text (body innerText, not the source) for
+  internal-methodology vocabulary leaking into player-facing content:
+  "our analyses", "validated across our reports", "gotcha", "pipeline",
+  "we publish". Internal rules justify the content; they never appear in it.
 
 ## Per-page content expectations
 

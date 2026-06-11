@@ -33,6 +33,7 @@ checklist item applied to a role/context where it is pointless.
 | E | Voluntary damage | taking the hit is assigned | soaks; "tank" mechanics on a designated non-tank |
 | F | Misleading IDs | cast id != debuff id; glyph variants; base+empowered pairs | a DoT logging under a different id than its cast; empowered spell pairs that must be summed |
 | G | Absorb/HPS illusions | absorbs, smart heals and sniping distort HPS comparisons | discipline absorbs vs throughput healers; healer HPS vs tops is INDICATIVE only |
+| H | Encounter-relative thresholds | a KPI's "good" value depends on the fight, not the spec | DoT uptime on target-swap bosses: top-1 parses themselves drop to 40-66% (vs 90%+ on stationary bosses) — never grade a maintenance KPI red without a same-encounter top reference next to it |
 
 ## THE checklist (mandatory before publishing any reproach)
 

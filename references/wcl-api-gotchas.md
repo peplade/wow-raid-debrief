@@ -6,12 +6,25 @@ Read before extraction; re-read when a number looks weird.
 ## Silent failures (the dangerous ones)
 
 - **`events(dataType:DamageTaken, targetID:X)` returns 0 events, no error**
-  (classic endpoint). Fetch FULL DamageTaken and filter code-side.
-  Same family: some sourceID+hostilityType combinations. Verified working:
+  (classic endpoint). Fetch FULL DamageTaken and filter code-side — or use
+  `sourceID:X`: for DamageTaken the "perspective entity" filter is the one
+  TAKING the damage (verified: `sourceID:<player>` returns events whose
+  `targetID` is that player). Same family: some sourceID+hostilityType
+  combinations. Verified working:
   `Casts` + `sourceID`, `Buffs` + `targetID`, `Debuffs` + `hostilityType`.
   **Validate every extraction by an EXPECTED POSITIVE** (a tank with zero
   damage taken = alarm; a healer with zero casts = alarm), never by the
   absence of an error.
+- **`graph()` without explicit `startTime`/`endTime` spans the WHOLE REPORT**
+  even with `fightIDs` set (same family: windowless `events()` on some
+  dataTypes truncates or widens silently). Symptom: cumulative
+  reconstructions (boss HP %, execute windows) land OUTSIDE the pull
+  duration. Always pass the fight bounds to `graph()` and `events()`.
+- **Some abilities emit NO cast event** (MoP Classic: Envenom). Count them
+  via buff `applybuff`+`refreshbuff` or their damage events instead of
+  `Casts`. Related: auto-attacks replaced by transformation buffs get their
+  own ability ids (e.g. Shadow Blades melee 121473/121474) — include them in
+  melee-uptime / swing-gap math or movement gets overestimated.
 - **Pagination duplicates events at page boundaries** (`nextPageTimestamp`
   overlaps; x1.1-2 volume). Dedup on a wide key (timestamp, type, sourceID,
   targetID, abilityGameID, amount, stack, targetInstance).
@@ -41,6 +54,20 @@ Read before extraction; re-read when a number looks weird.
   entries); flatten before reading `details`.
 - `phaseTransitions` exists on ~75-80% of boss pulls only (encounter-
   dependent); never assume presence.
+
+## Rankings & cohorts
+
+- **`characterRankings.count` is the PAGE size (always ≤100), not the pool
+  total** — there is no total field. Real pool size = paginate until
+  `hasMorePages` is false. Percentile cohorts (p95/p75/p50 reference
+  parses) = index into the flattened, paginated list:
+  `pos = ceil(total * (100-p) / 100)`. Cross-check: the character's
+  `zoneRankings ... allStars.total` ≈ same pool.
+- **`character.encounterRankings(encounterID, difficulty, size)`** returns
+  the FULL kill inventory of one character for that boss (percentile,
+  report code, fightID, duration, spec per kill) — shortest path to "every
+  kill of player X", no report scanning. `className`+`specName` are both
+  required on `characterRankings` or the query errors.
 
 ## Cheap data you might not know about
 

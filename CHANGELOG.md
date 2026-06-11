@@ -70,3 +70,19 @@ with and without the bundled zone traps).
 - Three interpretation corrections engraved as checklist points: tank
   stop-attack windows, dispel-hold under windowed buffs, equal-conditions
   player comparisons.
+
+## 2026-06-11 — backport (player-analysis session, rogue)
+
+- `wcl-api-gotchas.md`: DamageTaken events player filter = `sourceID`
+  (perspective entity) refines the silent-zero entry; `graph()` without
+  explicit start/end spans the whole report despite `fightIDs`; abilities
+  with no cast event (Envenom) counted via buff apply/refresh; transformed
+  auto-attack ids (Shadow Blades 121473/121474) in melee-uptime math; new
+  "Rankings & cohorts" section (`characterRankings.count` = page size, real
+  pool via pagination, percentile-cohort selection, `encounterRankings` as
+  full per-character kill inventory).
+- `redaction-guide.md`: positives as numbers never adjectives (AI-slop
+  flattery = report-rejection class, 2 live occurrences); pre-publish probe
+  for internal-methodology vocabulary in rendered text.
+- `interpretation-traps.md`: new trap class H — encounter-relative KPI
+  thresholds (DoT uptime on swap bosses: top parses drop to 40-66%).
