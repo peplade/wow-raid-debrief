@@ -62,6 +62,24 @@ Each finding gets a numbered entry in `<workdir>/verdicts.md` with the 5
 answers written out (format in SKILL.md stage 6). The file is the audit
 trail proving the gate ran; it stays in the workdir, unpublished.
 
+## Measurement techniques for the checks (validated in live gate runs)
+
+- **Reactive-mechanic proof (checks 1-2):** the debuff's `source_id` is
+  usually the BOSS even when the application is triggered by the victim's
+  own action — source attribution proves NOTHING about reactivity. The
+  proof is timestamp correlation: count applications landing within ~300ms
+  of the victim's own hit/cast on the boss (deep_aura applydebuff x
+  deep_dmg_done/deep_cast of the same player). A live gate run concluded
+  "boss-applied, therefore not reactive" from source_id alone — wrong
+  mechanism, luckily right verdict. Do the correlation.
+- **Check 4 when a top event type is missing:** top parses are extracted
+  with casts, FULL damage-taken, buffs-on-self, enemy debuffs and healing
+  totals — but NOT their dispels/friendly-debuff/heal events (API cost).
+  For received-DoT behavior, the top's `deep_dmg_taken` ticks of that
+  ability are always available and measure the same thing (ticks received
+  ≈ uptime suffered). If genuinely unmeasurable, SAY SO in the check and
+  weigh the verdict accordingly — never guess the top behavior.
+
 ## Self-audit heuristics (cheap pre-filters)
 
 - A "worst offender" table where one player concentrates the metric:

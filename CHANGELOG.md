@@ -5,6 +5,17 @@ newest first. Every lesson backported from real raid-night use gets an entry.
 
 ## [Unreleased]
 
+### Changed
+- Verdicts-gate hardening after two live Opus gate runs on the three
+  historical trap candidates (both runs reached the correct verdicts;
+  weaknesses found in the path, not the outcome): reactive-mechanic proof
+  now prescribes timestamp correlation explicitly (a debuff's source_id is
+  usually the BOSS even for victim-triggered applications — one run
+  concluded "not reactive" from source attribution alone), check-4
+  fallback documented (top deep_dmg_taken ticks are always available for
+  received-DoT behavior; top dispels/heal events are not extracted), and
+  the literal `- VERDICT:` line is now mandatory (machine-greppable).
+
 ### Added
 - Seamless quota management in the WCL client (`wcl.py`): `rateLimitData`
   polled every ~150 live calls, auto-pause through the hourly reset above

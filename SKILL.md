@@ -177,6 +177,9 @@ For EVERY finding that blames or grades a player/role/strategy, append to
 - VERDICT: PUBLISH AS FAULT | PUBLISH AS POSITIVE | OPEN QUESTION | DROP
 ```
 
+The last line of each entry MUST be literally `- VERDICT: <one of the four>`
+(machine-greppable; bold prose variants break the stage-7 cross-check).
+
 Rules:
 - Check 4 requires a MEASUREMENT on a top parse when the finding targets
   role gameplay (tank/healer behavior especially). "Obvious" is not a measure.
