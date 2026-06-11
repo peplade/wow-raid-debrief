@@ -703,6 +703,10 @@ def ingest_top_fight(be, code, fid, enc_id):
     if not rep or not rep.get("fights"):
         return
     f = rep["fights"][0]
+    # COMMIT DISCIPLINE (measured): commit after every upsert block, BEFORE
+    # the next network fetch — an open implicit transaction holds the WAL
+    # write lock through network latency/retries (minutes on a slow API) and
+    # starves/crashes sibling sharded workers.
     be.upsert("fight", {
         "report": code, "fight_id": fid, "encounter_id": enc_id, "boss": "",
         "difficulty": f.get("difficulty"), "size": f.get("size"),
@@ -728,6 +732,7 @@ def ingest_top_fight(be, code, fid, enc_id):
                 "role": {"tanks": "tank", "healers": "healer", "dps": "dps"}[role],
                 "item_level": a.get("minItemLevel") or a.get("itemLevel"),
             }, ["report", "fight_id", "actor_id"])
+    be.commit()
     fs, fe = f["startTime"], f["endTime"]
     for dt in ("Healing", "DamageDone", "DamageTaken"):
         t = fetch_table(be, code, fid, fs, fe, dt, ",hostilityType:Friendlies")
@@ -738,7 +743,7 @@ def ingest_top_fight(be, code, fid, enc_id):
                 "report": code, "fight_id": fid, "actor_id": e["id"], "data_type": dt,
                 "total": e.get("total"), "active_time": e.get("activeTime"),
             }, ["report", "fight_id", "actor_id", "data_type"])
-    be.commit()
+        be.commit()
 
 
 def cmd_top_detail(be, cfg, args):
@@ -791,6 +796,7 @@ def cmd_top_detail(be, cfg, args):
                 "source_id": e.get("sourceID"), "target_id": e.get("targetID"),
                 "ability_id": e.get("abilityGameID"),
             }, ["report", "fight_id", "seq"])
+        be.commit()             # release the write lock before the next fetch
         # FULL fetch + code-side filter (see gotcha above).
         dmg = [e for e in fetch_events(be, rcode, rfid, fs, fe, "DamageTaken")
                if e.get("targetID") == aid]
@@ -805,6 +811,7 @@ def cmd_top_detail(be, cfg, args):
                 "hit_type": e.get("hitType"), "buffs": e.get("buffs"),
                 "is_aoe": 1 if e.get("isAoE") else 0,
             }, ["report", "fight_id", "seq"])
+        be.commit()
         if not dmg:
             print(f"  WARNING: zero DamageTaken for top {tp['player_name']} "
                   f"({rcode} f{rfid}) — expected-positive check FAILED, "
@@ -818,6 +825,7 @@ def cmd_top_detail(be, cfg, args):
                     "source_id": e.get("sourceID"), "target_id": e.get("targetID"),
                     "ability_id": e.get("abilityGameID"), "stacks": e.get("stack"),
                 }, ["report", "fight_id", "kind", "seq"])
+            be.commit()
         t = fetch_table(be, rcode, rfid, fs, fe, "Healing")
         for en in t.get("data", {}).get("entries", []):
             if en.get("id") != aid:

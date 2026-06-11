@@ -190,7 +190,9 @@ def _post_gql(query, variables):
             return json.load(r)
     except urllib.error.HTTPError as e:
         _LAST[0] = time.monotonic()
-        if e.code in (429, 502, 503):
+        # Transients seen in production: 5xx app/gateway + Cloudflare 52x
+        # (WCL sits behind CF). A 504 NOT retried = a silently lost slice.
+        if e.code in (429, 500, 502, 503, 504, 520, 522, 524):
             return {"_http": e.code}
         try:
             return json.load(e)
@@ -251,7 +253,7 @@ def _live_gql(query, variables):
                   f"(attempt {attempt + 1}/6)", flush=True)
             time.sleep(wait)
             continue
-        time.sleep(2 ** attempt)               # 502/503 transient
+        time.sleep(2 ** attempt)               # 5xx/52x transient
     return {"errors": [{"throttled": True}]}
 
 
