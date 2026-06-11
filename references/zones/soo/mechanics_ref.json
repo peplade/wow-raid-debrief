@@ -1,0 +1,700 @@
+{
+  "51602": {
+    "boss": "Immerseus",
+    "mechanics": {
+      "143297": {
+        "name": "Sha Splash",
+        "class": "reducible",
+        "how": "dégâts des Sha Puddles pendant le Split : adds à tuer avant qu'ils atteignent le centre (spec : « dmg si atteignent le centre ») — pression réduite par le kill-speed des puddles, reproche DPS collectif, pas individuel",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L542 (§4 Immerseus) / p6_profiles.go L43-58 (canal 55.5k DTPS 10N, 78.4k 10H)"
+      },
+      "143579": {
+        "name": "Sha Corruption",
+        "class": "reducible",
+        "how": "DoT réactif Heroic du kit Swelling Corruption : chaque hit porté au boss sous Swelling Corruption (143574, CD 75s HM) applique le DoT à l'attaquant — volume piloté par sa propre cadence de hits, à lisser/stopper pendant la fenêtre",
+        "target": "all",
+        "source_ref": "DBM Immerseus.lua:L33/L44 (Swelling Corruption 143574 : announce + CD timer 75s, démarré HM-only L52-53) / p6_profiles.go L45-48 (fold stream)",
+        "note": "l'ID 143579 lui-même est absent de DBM : classement via le mécanisme Swelling Corruption (DoT réactif par hit, validé par events) — DBM ne pose aucune directive de mouvement sur ce kit (announce + CD timer seulement)"
+      },
+      "143436": {
+        "name": "Corrosive Blast",
+        "class": "tank",
+        "how": "le « Breath » d'Immerseus en phase DPS : frontal tank, CD ~35s (DBM) — jugé côté tanks ; un non-tank touché par le frontal = mal placé",
+        "target": "tank",
+        "source_ref": "soo_encounter_spec.md L546 (§4 Immerseus : Breath 143436, P3 tank, CD 35) / immerseus_ai.go L36 (DBM : Breath 35)",
+        "note": "collision de noms dans la spec : L545 étiquette « Corrosive Blast / Swirl » sur l'ID 143309 (sol à éviter), alors que 143436 est listé L546 sous « Breath » — l'ID + le CD DBM 35s confirment que 143436 = le frontal tank"
+      },
+      "143412": {
+        "name": "Swirl",
+        "class": "avoidable",
+        "how": "zone/rayon télégraphié pendant la phase DPS, à éviter en se déplaçant (CD ~48.5s DBM)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L545 (§4 Immerseus : Sol à éviter, P4 movement, CD 48.5) / immerseus_ai.go L36 (DBM : Swirl 48.5)",
+        "note": "la spec porte l'ID du cast 143309 ; le dégât loggé est 143412 — même mécanique (nom + CD DBM concordants)"
+      },
+      "145377": {
+        "name": "Erupting Water",
+        "class": "unknown",
+        "how": "évitabilité non documentée localement — canal AoE raid dédié dans le profil P6 (46.2k DTPS 10N / 41.2k 10H), modélisé aoePulse raid-wide (lissage, pas une preuve d'inévitabilité)",
+        "target": "all",
+        "source_ref": "p6_profiles.go L44, L54, L59",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      },
+      "143498": {
+        "name": "Erupting Sha",
+        "class": "unknown",
+        "how": "non documenté localement — composant du fold « misc » du profil P6 ; vraisemblablement lié à la mort/au nettoyage des Sha Puddles mais le lien n'est pas écrit dans les sources",
+        "target": "all",
+        "source_ref": "p6_profiles.go L45-48 (fold stream)",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      }
+    },
+    "notes_hm": "10H : plus de puddles + Swelling Corruption (143574) plus dense (spec L536/L544) ; canal Sha Pool 143460 HM-only (p6_profiles.go L55/L63 : 54.1k DTPS raid 10H) ; les Contaminated Puddles frappent en mêlée en HM (2e source Melee loggée 48.8k DTPS 10H — p6_profiles.go L46-48) ; HP effective 10H 320M vs 214M 10N (sous-comptée, fight add-centric — spec §HP L798).",
+    "interruptibles": [],
+    "dispellables": []
+  },
+  "51598": {
+    "boss": "The Fallen Protectors",
+    "mechanics": {
+      "143559": {
+        "name": "Dark Meditation",
+        "class": "unavoidable",
+        "how": "canal AoE raid du Desperate Measures de Sun Tenderheart : DBM se contente d'annoncer la phase (NewSpecialWarningSpell sur l'aura 143546) et suspend les timers Bane/Calamity pendant — aucune directive de mouvement, baseline heal de la phase (canal n°1 du fight : 77.3k DTPS 10N / 89.1k 10H)",
+        "target": "all",
+        "source_ref": "DBM FallenProtectors.lua:L86 (specWarnDarkMeditation 143546, annonce sans directive) + L253-258 (gestion de phase) / p6_profiles.go L71, L80, L85",
+        "note": "DBM porte l'aura de phase 143546 ; le dégât loggé est 143559"
+      },
+      "143424": {
+        "name": "Sha Sear",
+        "class": "reducible",
+        "how": "la spec classe Sha Sear « à interrompre » (interrupt) : le subi traduit des kicks manqués — reproche aux interrupters, pas à la victime",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L578 (§5 Fallen Protectors : Corruption Shock / Sha Sear, à interrompre) / p6_profiles.go L71-72, L86 (canal 32.0k DTPS 10N)",
+        "note": "la spec porte l'ID 143423 (cast) ; le dégât loggé est 143424"
+      },
+      "144365": {
+        "name": "Mark of Anguish",
+        "class": "unavoidable",
+        "how": "debuff ciblé (He Softfoot, Desperate Measures) : dégâts au porteur — charge heal, pas un reproche individuel ; la gestion/le transfert du Mark n'est pas documentée localement",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L580 (§5 : Mark 143840, debuff ciblé heal/all P6) / p6_profiles.go L73-74 (fold stream)",
+        "note": "la spec porte l'ID 143840 ; le dégât loggé est 144365"
+      },
+      "144397": {
+        "name": "Vengeful Strikes",
+        "class": "tank",
+        "how": "frappes tank de Rook Stonetoe (défensif requis), CD DBM 21s — jugé côté tanks",
+        "target": "tank",
+        "source_ref": "soo_encounter_spec.md L576 (§5 : Vengeful Strikes 144396, tank P9/P3) / dbm_soo_timings.md L127 (VengefulStrikes 21)",
+        "note": "la spec porte l'ID 144396 (cast) ; le dégât loggé est 144397"
+      },
+      "143434": {
+        "name": "Shadow Word: Bane",
+        "class": "unavoidable",
+        "how": "debuff ciblé (Sun Tenderheart) : DoT à soigner — charge heal ; saut entre joueurs / dispel non documentés localement",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L580 (§5 : Bane 143446, debuff ciblé heal/all P6) / dbm_soo_timings.md L127 (Bane 17)",
+        "note": "la spec porte l'ID 143446 ; le dégât loggé est 143434"
+      },
+      "143493": {
+        "name": "Calamity",
+        "class": "unavoidable",
+        "how": "burst raid scripté (whole-raid burst, cadence ~30s sim / 37.5s DBM) — baseline heal, tout le monde le prend",
+        "target": "all",
+        "source_ref": "p6_profiles.go L72, L82, L87 (whole-raid burst) / dbm_soo_timings.md L127 (Calamity 37.5)"
+      },
+      "143198": {
+        "name": "Garrote",
+        "class": "unavoidable",
+        "how": "DoT ciblé de He Softfoot : DBM l'annonce aux heals (TargetNoFilterAnnounce filtrée Healer + timer CD 29s HEALER_ICON, resserré ~20s en HM), aucune directive d'évitement ni de dispel — charge heal sur les porteurs",
+        "target": "targeted",
+        "source_ref": "DBM FallenProtectors.lua:L64 (warnGarrote, filtre Healer) + L76 (timer 29s HEALER_ICON, « heroic 20-26 ») + L238-244 / dbm_soo_timings.md L127 (Garrote 29) / p6_profiles.go L73-74, L88 (fold stream)"
+      }
+    },
+    "notes_hm": "HM : mécaniques Sha (Gloom/Misery/Sorrow) plus punitives + Defiled Ground (spec L570/L581) ; HP effective ×2 (510M 10N → 1.03Md 10H — spec L799). 3 boss à tuer quasi simultanément (gate énergie partagé, spec L575) ; mécanique tank annexe : Gouge 143330 (He Softfoot, look-away/stun tank — spec L579) ; Clash 143027 (Rook, charge à esquiver P4 — spec L577).",
+    "interruptibles": [
+      {"id": 143958, "name": "Corruption Shock", "caster": "Rook Stonetoe / Sun Tenderheart (spec : « Rook/Sun », non tranché)"},
+      {"id": 143423, "name": "Sha Sear", "caster": "Sun Tenderheart (dégât loggé sous 143424)"}
+    ],
+    "dispellables": []
+  },
+  "51624": {
+    "boss": "Norushen (Amalgam of Corruption)",
+    "mechanics": {
+      "145735": {
+        "name": "Icy Fear",
+        "class": "unavoidable",
+        "how": "AoE raid permanente qui monte avec la perte de vie du boss (ramp) : 64-73 % des dégâts du fight — LA baseline heal de Norushen, aucune mitigation par mouvement documentée",
+        "target": "all",
+        "source_ref": "p6_profiles.go L101-115 (Icy Fear 308.4k DTPS 10N / 434.1k 10H, ramp) / soo_encounter_spec.md L952 (jalon P6 : Icy Fear = 64-73 %)"
+      },
+      "145073": {
+        "name": "Residual Corruption",
+        "class": "unavoidable",
+        "how": "pulse des orbes Residual Corruption laissées au sol par les adds : DBM se limite à une SpellAnnounce off-par-défaut, une seule fois par nouvelle orbe (déduplication par GUID source), aucune directive individuelle — pression scriptée tant que les orbes persistent",
+        "target": "random",
+        "source_ref": "DBM Norushen.lua:L38 (warnResidualCorruption, announce off-par-défaut) + L214-219 (1 annonce par orbe via SPELL_DAMAGE) / p6_profiles.go L104, L113, L117"
+      },
+      "147082": {
+        "name": "Burst of Anger",
+        "class": "unknown",
+        "how": "évitabilité non documentée localement — pulse raid-wide /6s dans le profil P6 (18.4k DTPS 10N / 20.3k 10H)",
+        "target": "all",
+        "source_ref": "p6_profiles.go L105, L112, L116",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      },
+      "145212": {
+        "name": "Unleashed Anger",
+        "class": "tank",
+        "how": "frappe tank (CD DBM 10s) — jugée côté tanks (paire avec Piercing Corruption 144657)",
+        "target": "tank",
+        "source_ref": "soo_encounter_spec.md L684 (§6 Norushen : Unleashed Anger 145216, tank P3/P9) / dbm_soo_timings.md L130 (UnleashedAnger 10)",
+        "note": "la spec porte l'ID 145216 (cast) ; le dégât loggé est 145212"
+      },
+      "144639": {
+        "name": "Corruption",
+        "class": "unknown",
+        "how": "non documenté localement sous cet ID — ne pas confondre avec Lingering Corruption 144514 (à dispel) ni Hurl Corruption 144649 (à interrompre), documentés par la spec",
+        "target": "all",
+        "source_ref": "non documenté localement (spec §6 Norushen L680-689 ne couvre pas cet ID)",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      },
+      "146707": {
+        "name": "Disheartening Laugh",
+        "class": "unavoidable",
+        "how": "AoE scriptée du Greater Corruption pendant l'épreuve heal (Test of Reliance) : DBM ne pose qu'une SpellAnnounce + un timer 12s (annulés à la mort de l'add), aucune directive de mouvement — à soigner dans l'épreuve",
+        "target": "all",
+        "source_ref": "DBM Norushen.lua:L42 (warnDishearteningLaugh, section « Test of Reliance (Healer) ») + L70 (timer 12s) + L161-163 (cast) + L226-228 (caster Greater Corruption 72001)"
+      },
+      "145227": {
+        "name": "Blind Hatred",
+        "class": "avoidable",
+        "how": "faisceau qui balaye en chassant un joueur : se déplacer hors de la ligne (CD DBM 30s)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L683 (§6 : Blind Hatred 145226, faisceau, all move, P4) / dbm_soo_timings.md L130 (BlindHatred 30)",
+        "note": "la spec porte l'ID 145226 (cast) ; le dégât loggé est 145227"
+      }
+    },
+    "notes_hm": "HM : Corruption plus dure, gestion du realm (épreuve) plus serrée (spec L675) ; aucun kill 10H loggé sur classic (HP estimée ~410M — spec L678/L797). Mécanique P7 centrale : des joueurs partent dans l'épreuve (orbe) pour se purifier → retirés du combat ; la corruption RÉDUIT les dégâts infligés à l'Amalgam, Purified = baseline (spec L123/L141-143). Berserk court : 418s. Adds prioritaires : Manifestation of Corruption à switch (spec L685).",
+    "interruptibles": [
+      {"id": 144649, "name": "Hurl Corruption", "caster": "Amalgam of Corruption (spec L688)"}
+    ],
+    "dispellables": [
+      {"id": 144514, "name": "Lingering Corruption", "type": "Magic (DBM Norushen.lua L52 : NewSpecialWarningDispel + L171-175 : CheckDispelFilter('magic')) ; spec L687 « à dispel »"}
+    ]
+  },
+  "51604": {
+    "boss": "Sha of Pride",
+    "mechanics": {
+      "144351": {
+        "name": "Mark of Arrogance",
+        "class": "unavoidable",
+        "how": "DoT Shadow ciblé (stackant) : charge heal/dispel — le subi reflète la vitesse de dispel du raid (« dispel dance », sha_of_pride_ai), pas le mouvement individuel",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L710 (§6 Sha : Mark of Arrogance 144351, debuff P6) / sha_of_pride_ai.go L29, L44-45 (pure DoT stream, dispel dance) / dbm_soo_timings.md L124 (Mark 20.5)"
+      },
+      "144836": {
+        "name": "Unleashed",
+        "class": "unavoidable",
+        "how": "AoE raid scriptée « Unleashed » (cast 144832) : DBM la traite en simple SpellAnnounce (commentaire « Phase 2 ») et resynchronise les timers d'abilities à chaque cast — aucune directive de mouvement, à encaisser (~toutes les 40-50s dans le sim, 227-306k/joueur)",
+        "target": "all",
+        "source_ref": "DBM ShaofPride.lua:L36 (warnUnleashed 144832, announce sans directive) + L136-151 (resync des timers au cast) + L193-198 / sha_of_pride_ai.go L26-27, L42-43, L173-182",
+        "note": "DBM porte le cast 144832 ; le dégât loggé est 144836"
+      },
+      "144400": {
+        "name": "Swelling Pride",
+        "class": "unavoidable",
+        "how": "pulse AoE raid scripté quand le Sha atteint 100 énergie (~77s) : tout le raid le prend + gain de Pride pour tous — baseline heal du fight (~318k Shadow/joueur en 25H)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L706 (§6 : pulse AoE raid + Pride) et L211-213 (§P6 : ~318k/joueur, cadence ~77s) / sha_of_pride_ai.go L30, L40-41"
+      },
+      "144788": {
+        "name": "Self-Reflection",
+        "class": "reducible",
+        "how": "dégâts liés aux adds Self-Reflection (miroirs) : burst à l'apparition + pression tant qu'ils vivent — réduits par un switch DPS rapide ; reproche collectif DPS",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L707 (§6 : adds miroirs à switch, P2) / sha_of_pride_ai.go L27 (fold N « same shape »)",
+        "note": "la spec porte l'ID 144800 (cast) ; le dégât loggé est 144788"
+      },
+      "144379": {
+        "name": "Mocking Blast",
+        "class": "reducible",
+        "how": "cast à interrompre (spec) : les hits subis = kicks manqués — reproche aux interrupters",
+        "target": "random",
+        "source_ref": "soo_encounter_spec.md L712 (§6 : Mocking Blast 144379, à interrompre)"
+      },
+      "144636": {
+        "name": "Corrupted Prison (dégât)",
+        "class": "unavoidable",
+        "how": "joueur(s) emprisonné(s) (P7 acteur retiré) : dégâts périodiques subis pendant la prison — le ciblage est subi ; la libération par le raid (pads) n'est pas détaillée dans les sources locales",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L710 (§6 : Corrupted Prison 144574, emprisonnement P6/P7)",
+        "note": "deux IDs loggés pour la même mécanique : 144636 + 144574"
+      },
+      "144574": {
+        "name": "Corrupted Prison",
+        "class": "unavoidable",
+        "how": "voir 144636 — même mécanique (emprisonnement P7, dégâts pendant la prison)",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L710 (§6 : Corrupted Prison 144574, emprisonnement P6/P7)"
+      }
+    },
+    "notes_hm": "HM : Banishment 145215 (spec L700, DBM 37.5) — le banni part dans un realm dont le tick (Ethereal Corruption 149031) pesait 72 % du brut 25H, exclu du modèle heal car auto-géré/absorbé (sha_of_pride_ai.go L34-37) ; Pride monte plus vite ; rifts HM = Collapsing Rift 147388 + Unstable Corruption 147198, canal P6 HM-only (35.3k DTPS 10H — sha_of_pride_ai.go L31-32, L120). Mécanique centrale : énergie Pride par joueur → à 100, Overcome (MC, P7 — spec L705). Buff à exploiter : Gift of the Titans → stacker les giftés = Power of the Titans, +15 % dégâts +15 % haste 15s/~25s (spec L122/L136-140, modélisé +12 % DPS Ret). Tank : Wounded Pride 144358 (spec L709, DBM 30). Sol à éviter : Bursting Pride 144911 (spec L711).",
+    "interruptibles": [
+      {"id": 144379, "name": "Mocking Blast", "caster": "Manifestation of Pride (DBM ShaofPride.lua L62-64 : NewSpecialWarningInterrupt sous la section « Manifestation of Pride ») ; spec L712"}
+    ],
+    "dispellables": [
+      {"id": 144351, "name": "Mark of Arrogance", "type": "non précisé localement — « dispel dance » documentée (sha_of_pride_ai.go L44-45), école Shadow dans le sim"}
+    ]
+  },
+  "51622": {
+    "boss": "Galakras",
+    "mechanics": {
+      "146901": {
+        "name": "Fracture",
+        "class": "unavoidable",
+        "how": "frappe/debuff ciblé des vagues P1 : DBM se limite à une TargetNoFilterAnnounce sur l'aura 146899, aucune directive de mouvement ni de dispel — subi par la cible, charge heal",
+        "target": "targeted",
+        "source_ref": "DBM Galakras.lua:L46 (warnFracture 146899, TargetNoFilterAnnounce) + L197-198 / p6_profiles.go L277-280 (fold « Siege Assault »)",
+        "note": "DBM porte l'aura 146899 ; le dégât loggé est 146901 — version trash du même kit : 147200 (SoOTrash.lua L19/L25)"
+      },
+      "146992": {
+        "name": "Flames of Galakrond",
+        "class": "reducible",
+        "how": "P2 : feu stackant qui se répand entre joueurs — géré par positionnement/rotation du débuff, réductible mais pas annulable (plus dur en HM)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L516 (§4 Galakras : feu stackant, se répand, P4/P6, CD 5.7) / p6_profiles.go L288 (l'ID porte le stream du sim)",
+        "note": "la spec documente les IDs 147068/147029 ; nos logs voient 146992 + 147029 (multi-IDs du même kit Flames)"
+      },
+      "147029": {
+        "name": "Flames of Galakrond",
+        "class": "reducible",
+        "how": "voir 146992 — même mécanique (ID présent tel quel dans la spec L516)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L516 (§4 Galakras : Flames of Galakrond 147068/147029)",
+        "dbm_conflict": "DBM traite 147029 comme un stack TANK avec taunt-swap : StackAnnounce flag Tank, SpecialWarningStack à ≥6, SpecialWarningTaunt pour l'autre tank, TargetTimer 15s TANK_ICON (Galakras.lua L84/L89-90/L93, L207-228) — le débuff stackant est géré en swap tank P2, pas en feu raid ; la version ciblée joueur est 147068 (You + yell + fixate icon L87-88)"
+      },
+      "147043": {
+        "name": "Pulsing Flames",
+        "class": "reducible",
+        "how": "rattaché par la spec et DBM au cycle Flames of Galakrond en P2 (timer « Pulsing 26.2 » dans la ligne Flames) : dépend de la gestion du débuff feu — reproche de gestion collective du stack",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L516 (timing « Pulsing 26.2 ») / dbm_soo_timings.md L90 (P2 : PulsingFlames +26.2) / p6_profiles.go L279 (fold)"
+      },
+      "147204": {
+        "name": "Shattering Roar",
+        "class": "unknown",
+        "how": "évitabilité non documentée localement — AoE raid dans le sim (per-event 121-137k, cadence ~35-39s), caster non identifié dans les sources",
+        "target": "all",
+        "source_ref": "p6_profiles.go L276-277, L283-287",
+        "dbm_status": "absent de DBM-MoP (grep clone complet) — ne pas confondre avec Shattering Cleave 146849 (frappe tank de Thranok, DBM Galakras.lua L54/L76)"
+      },
+      "146764": {
+        "name": "Flame Arrows",
+        "class": "unknown",
+        "how": "non documenté localement — composant du fold stream P6 (vagues P1)",
+        "target": "all",
+        "source_ref": "p6_profiles.go L279 (fold)",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      },
+      "147713": {
+        "name": "Venom Bolt Volley",
+        "class": "unknown",
+        "how": "non documenté localement — composant du fold stream P6 ; aucune source locale n'identifie le caster ni une interruption possible",
+        "target": "all",
+        "source_ref": "p6_profiles.go L279 (fold)",
+        "dbm_status": "absent de DBM-MoP (grep clone complet — DBM ne couvre côté poison P1 que Poison Cloud 147705, en GTFO)"
+      }
+    },
+    "notes_hm": "HM : Flames of Galakrond plus dur, plus d'adds (spec L506). Structure : P1 ~377s SANS boss (Galakras aéroportée/immune) = 8 vagues d'adds + 4 mini-boss aux tours (Korgra ~116s, Krugruk ~194s, Thranok ~225s, Dagryn ~359s — galakras_ai.go L37-43, L80-89), puis P2 = burn single-target. Pré-pot sur la 1ère vague, pas sur le boss (spec L508). Sol/cônes P1 à éviter : Crushers' Call 146769, Poison Cloud 147705 (GTFO), Muzzle Spray 147824, Arcing Smash 147688 (spec L514). Add à détruire : War Banner 147328 (buff les adds — spec L513).",
+    "interruptibles": [
+      {"id": 146757, "name": "Chain Heal", "caster": "Dragonmaw Tidal Shaman (vagues P1 — spec L512)"}
+    ],
+    "dispellables": []
+  },
+  "51600": {
+    "boss": "Iron Juggernaut",
+    "mechanics": {
+      "144484": {
+        "name": "Seismic Activity",
+        "class": "unavoidable",
+        "how": "tick raid permanent pendant Siege Mode (1 tick/s/joueur en N, 1/2s en H — taux WCL) : baseline heal du Siege, aucun évitement documenté ; cesse en Assault",
+        "target": "all",
+        "source_ref": "iron_juggernaut_ai.go L19, L29-35, L278-288 (Siege Mode raid tick, 104.2k DTPS 10N / 122.3k 10H)",
+        "note": "ne pas confondre avec 144483 = le cast de transition Seismic Activity → Siege Mode (spec L408)"
+      },
+      "144467": {
+        "name": "Ignite Armor",
+        "class": "tank",
+        "how": "DoT tank stackant (+10 % dégâts Feu subis par stack dans le sim) qui force le tank-swap (~5 stacks) — jugé côté tanks",
+        "target": "tank",
+        "source_ref": "soo_encounter_spec.md L410 (§4 IJ : stack tank → swap, P9, CD 8.5) / iron_juggernaut_ai.go L539-612 (DoT 30s, swap à SwapAtStackCount)"
+      },
+      "144791": {
+        "name": "Engulfed Explosion",
+        "class": "avoidable",
+        "how": "explosion des flaques d'Explosive Tar enflammées (Siege) : être touché = se tenir dans le tar au moment de l'ignition — DBM pose un GTFO « watchfeet » sur l'aura de tar 144498 et annonce chaque salve 144492 ; sortir des flaques annule le risque",
+        "target": "all",
+        "source_ref": "DBM IronJuggernaut.lua:L153-155 (specWarnGTFO sur aura tar 144498) + L40, L199-204 (Explosive Tar 144492) / iron_juggernaut_ai.go L25-26, L301 (fold Siege misc)",
+        "note": "l'ID 144791 lui-même est absent de DBM : classe déduite par chaînage du kit Explosive Tar (144492 cast → 144498 aura GTFO → 144791 explosion) ; la spec ne liait que les Crawler Mines 144673 (L412)"
+      },
+      "144459": {
+        "name": "Laser Burn",
+        "class": "avoidable",
+        "how": "DoT appliqué par le Cutter Laser (Assault) : le laser fixate et poursuit sa cible, tout le monde s'écarte du tracé — un hit subi = trajectoire mal gérée (par la cible qui kite ou par ceux sur le chemin)",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L413 (Cutter Laser 146325 : fixate, courir, P4) + L414 (Laser Burn 144459 : DoT, heal, P3/P6) / iron_juggernaut_ai.go L440-495",
+        "note": "le sim le modélise en proc aléatoire 7.7 %/joueur (lissage WCL) — la classification s'appuie sur la mécanique spec (fixate à kiter)"
+      },
+      "144218": {
+        "name": "Borer Drill",
+        "class": "avoidable",
+        "how": "foreuses lancées sur un joueur ciblé (Assault) qui labourent le sol : s'écarter de la trajectoire (CD DBM 15.7)",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L411 (§4 IJ : ciblé, sol à éviter, P4, CD 15.7) / iron_juggernaut_ai.go L23 (« chases players »), L312-323 / dbm_soo_timings.md L107"
+      },
+      "144154": {
+        "name": "Demolisher Cannons",
+        "class": "unavoidable",
+        "how": "tirs récurrents des canons (présents dans les DEUX modes selon DBM, cadence ~6.1s) : DBM ne pose qu'une SpellAnnounce off-par-défaut jugée spammy + un timer off, aucune directive — bruit de fond à soigner",
+        "target": "random",
+        "source_ref": "DBM IronJuggernaut.lua:L31 (announce off-par-défaut, « This spell uses in both mode ») + L55 (CD 6.1s off, « Spammy ») + L196-198 (trigger 144198) / iron_juggernaut_ai.go L24, L289-299"
+      },
+      "144316": {
+        "name": "Mortar Blast",
+        "class": "unavoidable",
+        "how": "mortier « Mortar Cannon » du mode Assault sur cible (trigger 145407) : DBM se limite à une SpellAnnounce off-par-défaut après avoir renoncé au target-scan, aucune directive individuelle — subi par la cible, charge heal",
+        "target": "random",
+        "source_ref": "DBM IronJuggernaut.lua:L35 (warnMortarCannon 144316, announce off, « Could not get target scanning working ») + L184-186 (trigger 145407) / iron_juggernaut_ai.go L25-26, L300-310",
+        "note": "DBM distingue 144316 (Mortar Cannon, Assault) du « Mortar Barrage » 144553 du Siege (SpecialWarningSpell voix watchstep, L53/L215-217 + spec L416 P6) — le rapprochement supposé avec 144553 ne tient pas"
+      }
+    },
+    "notes_hm": "HM : Ricochet 144356 (bonds entre joueurs pendant Siege, CD 15) HM-only (spec L403/L417) ; Berserk 450s en HC vs 600s en N (dbm L111). Structure Assault/Siege : 1er Siege à 120.5s, cycle 114s, Siege dure 62s (iron_juggernaut_ai.go L50-57, DBM) ; pendant Siege le boss cesse de melee (tourelle) et les canaux Siege tirent. Shock Pulse 144485 = knockback récurrent pendant Siege → perte d'uptime melee répétée (spec L409). Sol Siege : Explosive Tar 144492 (flaque GTFO — spec L415). Le sim IJ est l'encounter P3/P6 le plus complet (tank-swap Ignite modélisé).",
+    "interruptibles": [],
+    "dispellables": []
+  },
+  "51606": {
+    "boss": "Kor'kron Dark Shaman",
+    "mechanics": {
+      "144089": {
+        "name": "Toxic Mist",
+        "class": "unavoidable",
+        "how": "DoT toxique appliqué à des joueurs (p6 : « DoT » pur, 64.0k DTPS 10N / 119.2k 10H) : charge heal — dispel non documenté localement",
+        "target": "targeted",
+        "source_ref": "p6_profiles.go L123-124, L132, L137 (DoT) / soo_encounter_spec.md L603 (groupe « flaques toxiques, dégâts raid, heal + all(move), P6/P4 »)",
+        "note": "DIVERGENCE spec/code : la spec groupe Toxic Mist avec les flaques à éviter (P4 move), le profil P6 le décrit comme DoT pur (non esquivable une fois appliqué) — classé selon le code"
+      },
+      "144215": {
+        "name": "Froststorm Strike",
+        "class": "tank",
+        "how": "frappe frontale tank stackante (Haromm) qui force le tank-swap — jugée côté tanks",
+        "target": "tank",
+        "source_ref": "soo_encounter_spec.md L601 (§5 KDS : tank stack → swap, P9)"
+      },
+      "143987": {
+        "name": "Falling Ash",
+        "class": "avoidable",
+        "how": "« pluie » de cendres : zone qui tombe (burst ~55s), à quitter avant l'impact (spec : P4 movement)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L604 (§5 : Iron Prison / Falling Ash, « Emprisonnement / pluie », P4/P7) / p6_profiles.go L124-125, L133-134, L138",
+        "note": "DIVERGENCE spec/code : la spec le met en P4 (évitable), mais le profil P6 le modélise raid-wide burst (per-event 222-329k) car dans les kills WCL le raid l'encaisse largement — évitable sur le papier, souvent mangé en pratique. IDs : spec 143973 (cast), logs/sim 143987 (dégât)"
+      },
+      "144214": {
+        "name": "Froststorm Bolt",
+        "class": "unknown",
+        "how": "non documenté localement — composant du fold stream P6 (« Froststorm Strike/Bolt ») ; à distinguer de Froststorm Strike 144215 (tank)",
+        "target": "random",
+        "source_ref": "p6_profiles.go L126-127 (fold)",
+        "dbm_status": "absent de DBM-MoP (grep clone complet — DBM ne couvre du kit Froststorm que le Strike 144215, en stack tank + taunt)"
+      },
+      "144017": {
+        "name": "Toxic Storm",
+        "class": "avoidable",
+        "how": "tornade/zone toxique au sol : s'en écarter (spec : groupe flaques toxiques, all move, P4)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L603 (§5 : Toxic Storm 144005, P6/P4) + L595 (HM-only)",
+        "note": "la spec marque Toxic Storm HM-only (L595) — observé dans nos logs : vérifier la difficulté du log concerné. IDs : spec 144005 (cast), logs 144017 (dégât)",
+        "dbm_conflict": "DBM ne gate PAS Toxic Storm par difficulté : cast 144005 traité en toutes difficultés avec target-scan + SpecialWarningYou sur 144017 + yell (KorkronDarkShaman.lua L41/L54-55/L69/L138-140) — la mention spec « HM-only » L595 n'est pas corroborée ; le ciblage joueur (You/yell) conforte par ailleurs la classe avoidable"
+      },
+      "143993": {
+        "name": "Foul Geyser",
+        "class": "avoidable",
+        "how": "geysers/flaques toxiques : éviter les zones (spec : groupe flaques toxiques, all move, P6/P4)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L603 (§5 : Foul Geyser 143990) / p6_profiles.go L139 (l'ID porte le stream du sim)",
+        "note": "IDs : spec 143990 (cast), logs/sim 143993 (dégât)"
+      },
+      "144090": {
+        "name": "Foul Stream",
+        "class": "avoidable",
+        "how": "jet projeté sur un axe (ligne télégraphiée) : sortir de la ligne (spec : « sol/murs à esquiver », P4)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L602 (§5 : Foul Stream 144090 / Ashen Wall / Iron Tomb, P4 movement)"
+      }
+    },
+    "notes_hm": "HM : sol plus dense (Ashen Wall 144070, Iron Tomb 144328) + Toxic Storm (spec L595) ; HP 453M → 655M (spec L593). 2 boss tankés/tués ensemble, réellement cleavables (spec L588-589) ; pas de hard-enrage classique (CD DBM 540s). Iron Prison 144330 = emprisonnement (P4/P7 — spec L604).",
+    "interruptibles": [],
+    "dispellables": []
+  },
+  "51603": {
+    "boss": "General Nazgrim",
+    "mechanics": {
+      "143638": {
+        "name": "Bonecracker",
+        "class": "unavoidable",
+        "how": "saignement posé sur des joueurs (cadence ~30s) : DBM se limite à une TargetAnnounce et un timer CD tous deux off-par-défaut, aucune directive d'évitement ni de dispel — charge heal continue, cohérent avec « THE Nazgrim raid pressure » du sim (62.2k DTPS 10N / 113.4k 10H)",
+        "target": "targeted",
+        "source_ref": "DBM GeneralNazgrim.lua:L33 (warnBonecracker TargetAnnounce off-par-défaut) + L75 (timerBoneCD 30s off) + L334-336 (CombinedShow multi-cibles) / p6_profiles.go L150-151, L159, L163"
+      },
+      "143503": {
+        "name": "War Song",
+        "class": "unavoidable",
+        "how": "cri AoE raid scripté (~30s dans le sim) — baseline heal, tout le raid le prend",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L456 (§4 Nazgrim : Ironstorm / War Song, Whirlwind AoE, all, P6) / p6_profiles.go L151-152, L160, L164 (raid shout)"
+      },
+      "143494": {
+        "name": "Sundering Blow",
+        "class": "tank",
+        "how": "stack tank en Battle Stance (CD DBM 7.5) qui force le swap — jugé côté tanks",
+        "target": "tank",
+        "source_ref": "soo_encounter_spec.md L451 (§4 : Battle Stance, Sunder 143494, tank P9) / dbm_soo_timings.md L66 (Sunder 7.5)",
+        "note": "le sim réutilise cet ID comme étiquette du fold stream « Kor'kron Assault » (p6_profiles.go L165) — dans les logs réels 143494 = le Sundering Blow tank"
+      },
+      "143873": {
+        "name": "Ravager",
+        "class": "avoidable",
+        "how": "tourbillon posé au sol qui tourne sur place : s'en écarter (esquive/GTFO)",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L454 (§4 : Ravager 143872/143873, tourne, esquive/GTFO, P4)"
+      },
+      "143716": {
+        "name": "Heroic Shockwave",
+        "class": "avoidable",
+        "how": "cône frontal (onde de choc) : sortir de l'axe",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L455 (§4 : Heroic Shockwave 143500, cône frontal, melee/all, P4, HM-only)",
+        "note": "DIVERGENCE potentielle : la spec le marque HM-only (L439/L455) mais il apparaît dans nos logs — vérifier la difficulté du log ou la portée réelle (en MoP l'aftershock 143716 peut différer du cast 143500 documenté)"
+      },
+      "143432": {
+        "name": "Arcane Shock",
+        "class": "unknown",
+        "how": "non documenté localement par ID — couvert par le fold « arcane/shots misc » du profil P6 ; hypothèse non confirmée : sort des adds casters Kor'kron Arcweaver 71517 (listés spec L443/L457)",
+        "target": "random",
+        "source_ref": "p6_profiles.go L152-154 (fold) / soo_encounter_spec.md L443 (Arcweaver caster)",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : l'hypothèse Arcweaver reste invérifiable via DBM)"
+      },
+      "143421": {
+        "name": "Ironstorm",
+        "class": "unavoidable",
+        "how": "whirlwind AoE (Ironstorm) — dégâts raid P6, pas d'évitement documenté",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L456 (§4 : Ironstorm 143420 / War Song, Whirlwind AoE, all, P6)",
+        "note": "la spec porte l'ID 143420 ; le dégât loggé est 143421",
+        "dbm_conflict": "DBM contredit l'inesquivabilité : Ironstorm 143420 reçoit un NewSpecialWarningDodge voix watchstep, déclenché seulement si le joueur est à <13 m de l'add (sinon simple annonce flag Melee) — whirlwind de l'add Kor'kron Ironblade esquivable en s'écartant, pas une AoE raid globale (GeneralNazgrim.lua L40/L61 + L225-231)"
+      }
+    },
+    "notes_hm": "HM : Heroic Shockwave + add Kor'kron Sniper 71656 + Defensive Stance au reflect punissant (spec L439) ; tonnage d'adds ≈2× (~10/kill en N → ~23 en 10H, Sniper ×4 — spec L440, nazgrim_ai.go L90-94). Cycle 3 stances ~60s chacune (Battle → Berserker → Defensive, cycle ~182s) ; en Defensive : NE PAS taper le boss (reflect/DR), cleave la vague Kor'kron (fenêtres ~121-183s et ~303-364s — nazgrim_ai.go L25-32, L110-120). Adds = multi-target à priorité focus, PAS du cleave libre : Warshaman > Sniper (HM) > Assassin, tankés à l'écart (spec L427-430). Execute 143502 : frappe sur cible basse vie, défensif requis (spec L453). Assassin's Mark 143480, Banner 143536 (spec L457).",
+    "interruptibles": [
+      {"id": 143473, "name": "Chain Heal", "caster": "Kor'kron Warshaman 71519 / Healing Tide Totem 71610 à switch (spec L457)"}
+    ],
+    "dispellables": [
+      {"id": 143475, "name": "Earth Shield", "type": "Magic — purge offensive sur add Kor'kron Warshaman (DBM GeneralNazgrim.lua L65 : NewSpecialWarningDispel flag MagicDispeller, voix dispelboss) ; spec L457"}
+    ]
+  },
+  "51595": {
+    "boss": "Malkorok",
+    "mechanics": {
+      "142906": {
+        "name": "Ancient Miasma",
+        "class": "unavoidable",
+        "how": "aura passive permanente : dégâts raid continus (tick ~2s) ET conversion de tous les soins en boucliers d'absorption (Ancient Barrier, 0 % heal direct) — baseline heal absolue, LE throughput-check du tier, le fight se gagne au débit de boucliers",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L735 (§6 Malkorok : soins → absorbs, P6 majeur, passif) / malkorok_ai.go L10-14, L21, L31 (tick stream 2s, 152.8k DTPS 10N / 193.8k 10H)"
+      },
+      "142890": {
+        "name": "Blood Rage",
+        "class": "unavoidable",
+        "how": "frappes sur joueurs aléatoires pendant la phase Blood Rage (~350k/hit dans le sim) — dégâts scriptés P3, charge heal, pas de reproche individuel documenté",
+        "target": "random",
+        "source_ref": "soo_encounter_spec.md L737 (§6 : Blood Rage 142879, phase de rage, tank/heal, P3) / malkorok_ai.go L26-27, L35-36, L59, L179-188",
+        "note": "la spec documente le buff 142879 ; le dégât loggé/sim est 142890"
+      },
+      "142987": {
+        "name": "Imploding Energy (échec de soak)",
+        "class": "soak",
+        "how": "gros hit quand une Imploding Energy n'est PAS soakée (« N only: unsoaked big hit » dans les données WCL) — quelqu'un devait la prendre : reproche d'assignment collectif, pas la faute de celui qui encaisse",
+        "target": "all",
+        "source_ref": "malkorok_ai.go L23 (Imploding 142987 : N only, unsoaked big hit ; 36.9k DTPS 10N, absent en H)"
+      },
+      "142986": {
+        "name": "Imploding Energy",
+        "class": "soak",
+        "how": "dégât du soak des zones Imploding Energy (hits réels ~410-600k sur un sous-ensemble de joueurs) : les soakers assignés DOIVENT le prendre — le subi des soakers est attendu",
+        "target": "all",
+        "source_ref": "malkorok_ai.go L22, L33-34 (real hits land on a subset) / dbm_soo_timings.md L125 (ImplodingEnergy 10)",
+        "note": "DIVERGENCE spec/code : la spec L738 classe Imploding « à courir/écarter » (P4 move) ; le code documente le pattern soak (142987 = punition « unsoaked ») — classé selon le code, plus précis"
+      },
+      "142816": {
+        "name": "Breath of Y'Shaarj",
+        "class": "avoidable",
+        "how": "cône frontal (~70s, 1er à ~67s) que le tank oriente hors du raid : ne pas être dans l'arc — le melee derrière le boss ne bouge jamais ; un non-tank touché = mal placé",
+        "target": "all",
+        "source_ref": "soo_encounter_spec.md L736 (§6 : cône frontal, tank oriente à l'écart, P4 ranged/heal seulement, 1er 67.3s récurrent ~70s)",
+        "note": "la spec porte l'ID 142842 ; le dégât loggé est 142816"
+      },
+      "142928": {
+        "name": "Displaced Energy",
+        "class": "avoidable",
+        "how": "débuff run-out par-joueur : le porteur s'écarte du raid avant l'explosion — dégâts collatéraux évitables par l'écart (CD DBM 11s) ; le détail porteur-vs-éclaboussure n'est pas documenté localement",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L738 (§6 : Imploding/Displaced Energy, à courir/écarter, P4) + L723 (« run-out par-joueur, DPS-négligeable ») / dbm_soo_timings.md L125 (DisplacedEnergy 11)",
+        "note": "la spec porte l'ID 142913 ; le dégât loggé est 142928"
+      },
+      "142849": {
+        "name": "Seismic Slam",
+        "class": "tank",
+        "how": "frappe tank périodique (landed ~240-300k en 10N/10H dans le sim, cadence WCL) — jugée côté tanks",
+        "target": "tank",
+        "source_ref": "malkorok_ai.go L25, L37-38, L62-63, L139-149 (tankPulse current tank, SpellFlagIgnoreArmor)",
+        "note": "absent de la table spec (qui liste Arcing Smash 142815 et Fatal Strike 142990 côté tank) — canal sourcé WCL côté code uniquement",
+        "dbm_conflict": "DBM ne traite PAS Seismic Slam en frappe tank : simple CountAnnounce sur le cast 142851 + timer count, sans flag Tank ni warning Defensive/Taunt (Malkorok.lua L35/L55/L127-131) — contraste avec Fatal Strike 142990 (StackAnnounce Tank + SpecialWarningStack/Taunt L36/L47-48) ; la classe tank repose sur le tankPulse du sim uniquement"
+      }
+    },
+    "notes_hm": "HM : Miasma/dégâts plus durs (spec L730) ; le hit d'échec Imploding 142987 n'apparaît PAS dans les logs WCL Heroic (toujours soaké en H — malkorok_ai.go L23) ; Berserk 360s = court/serré (DBM). Tank annexes : Arcing Smash 142815 (cône frontal tank, P4/P9), Fatal Strike 142990 (stack → swap, P9) — spec L739-740. Pour un DPS melee, Malkorok = patchwerk fidèle (aucun mouvement melee — spec L716-724) ; toute la difficulté est heal (Miasma) et exécution soak/spread.",
+    "interruptibles": [],
+    "dispellables": []
+  },
+  "51594": {
+    "boss": "Spoils of Pandaria",
+    "mechanics": {
+      "148760": {
+        "name": "Pheromone Cloud",
+        "class": "avoidable",
+        "how": "nuage de phéromones mouvant relâché par les Encapsulated Pheromones (caisses Mantid) : dégâts périodiques à quiconque reste dedans — s'en écarter ; DBM traite le dégât du même kit (145748) en GTFO « watchfeet »",
+        "target": "all",
+        "source_ref": "DBM SpoilsOfPandria.lua:L116 (registre SPELL_DAMAGE 145748) + L225-227 (specWarnGTFO watchfeet)",
+        "note": "l'ID 148760 lui-même est absent de DBM : classe déduite par adjacence du kit phéromones (145748 GTFO) — même gameplay « sortir du nuage »"
+      },
+      "148583": {
+        "name": "Jade Tempest",
+        "class": "unknown",
+        "how": "non documenté localement",
+        "target": "all",
+        "source_ref": "non documenté localement",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      },
+      "148516": {
+        "name": "Shadow Volley",
+        "class": "unknown",
+        "how": "non documenté localement",
+        "target": "all",
+        "source_ref": "non documenté localement",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      },
+      "146217": {
+        "name": "Keg Toss",
+        "class": "unknown",
+        "how": "non documenté localement",
+        "target": "all",
+        "source_ref": "non documenté localement",
+        "dbm_status": "absent de DBM-MoP (grep clone complet — DBM ne couvre les esprits pandarens des Crates of Pandaren Relics que via Breath of Fire 146222, Gusting Crane Kick 146180, Path of Blossoms 146253)"
+      },
+      "145748": {
+        "name": "Encapsulated Pheromones",
+        "class": "avoidable",
+        "how": "dégât de zone du kit phéromones (caisses Mantid) : DBM le traite en GTFO « watchfeet » dès qu'il touche le joueur (SPELL_DAMAGE/MISSED) — on n'est pas censé le prendre, s'écarter du nuage",
+        "target": "all",
+        "source_ref": "DBM SpoilsOfPandria.lua:L116 (registre SPELL_DAMAGE 145748) + L225-227 (specWarnGTFO watchfeet, défini L67)"
+      },
+      "145993": {
+        "name": "Set to Blow",
+        "class": "reducible",
+        "how": "bombes portées à poser/faire détoner avec le bon timing/placement (spec : « bombe à gérer (timing) », P4/P7) — dégâts liés à la gestion, réductibles ; reproche au porteur/à l'assignment",
+        "target": "targeted",
+        "source_ref": "soo_encounter_spec.md L649 (§5 Spoils : Set To Blow 145987/145996, P4/P7) / dbm_soo_timings.md L131 (SetToBlow 9.6)",
+        "note": "la spec porte les IDs 145987/145996 ; le dégât loggé est 145993"
+      },
+      "142759": {
+        "name": "Pulse",
+        "class": "unknown",
+        "how": "non documenté localement",
+        "target": "all",
+        "source_ref": "non documenté localement",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      }
+    },
+    "notes_hm": "HM : plus de coffres / mobs plus durs, timer plus serré (spec L643) ; Berserk 480s = timer d'ouverture serré (le soft-enrage = Matter Scramble 145288 / Super Nova). COUVERTURE LOCALE MINIMALE : 6/7 abilities observées non documentées — Spoils est le seul boss observé sans AI sim (aucun spoils_ai.go, « toujours non modélisé » — spec L847/L934) et la spec ne liste qu'une poignée d'IDs. Combat atypique : ouvrir des coffres et burst les mobs en fenêtres (spec L635-637).",
+    "interruptibles": [
+      {"id": 145230, "name": "Forbidden Magic", "caster": "mob des coffres (non précisé localement — spec L651)"}
+    ],
+    "dispellables": [
+      {"id": 145812, "name": "Rage of the Empress", "type": "Magic — purge offensive sur mob (DBM SpoilsOfPandria.lua L63 : warning flag MagicDispeller, voix dispelboss) ; spec L653"},
+      {"id": 145692, "name": "Enrage", "type": "Enrage — à dissiper (soothe) sur mob (DBM SpoilsOfPandria.lua L64 : NewSpecialWarningDispel flag RemoveEnrage — DBM note que kiter peut être préférable au dispel)"},
+      {"id": 145786, "name": "Residue", "type": "Magic — purge offensive sur mob (DBM SpoilsOfPandria.lua L62 : warning flag MagicDispeller, voix dispelboss, timer CD 18s L81) — ajouté via DBM, absent de la spec"}
+    ]
+  },
+  "51599": {
+    "boss": "Thok the Bloodthirsty",
+    "mechanics": {
+      "143343": {
+        "name": "Deafening Screech",
+        "class": "unavoidable",
+        "how": "screech AoE raid récurrent qui s'accélère avec les stacks de Frenzy : 64-80 % des dégâts du fight dans les kills WCL — LE heal-check du tier, baseline heal (per-event 201-320k/joueur en 10)",
+        "target": "all",
+        "source_ref": "p6_profiles.go L170-174, L184-189 (Screech 515.2k DTPS 10N / 416.8k 10H, accelerating ramp) / soo_encounter_spec.md L485 (§4 Thok : raid dmg, P6) et L951 (jalon : 64-80 % du fight)",
+        "note": "la spec L485 le marque aussi « à interrompre » (rôle interrupt) — aucun autre détail local ; il pèse pourtant 64-80 % des kills WCL, donc en pratique massivement subi. Mention reprise dans interruptibles avec ce caveat",
+        "dbm_conflict": "la mention spec « à interrompre » n'est pas corroborée par DBM : le warning est NewSpecialWarningCast restreint au rôle SpellCaster (ThokTheBloodthirsty.lua L52) = « casters, calez vos casts avant le screech » (le screech interrompt les CASTS DES JOUEURS), pas un kick sur le boss ; timer compteur HEALER_ICON L76 — conforte la classe unavoidable"
+      },
+      "143707": {
+        "name": "Shock Blast",
+        "class": "unknown",
+        "how": "évitabilité non documentée localement — canal stream sur cible aléatoire dans le sim, surtout lourd en Heroic (18.3k DTPS 10N → 77.5k 10H)",
+        "target": "random",
+        "source_ref": "p6_profiles.go L175, L186, L190",
+        "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+      },
+      "143426": {
+        "name": "Fearsome Roar",
+        "class": "tank",
+        "how": "stack tank pendant la phase Frenzy (CD DBM 11s) — jugé côté tanks",
+        "target": "tank",
+        "source_ref": "soo_encounter_spec.md L484 (§4 Thok : Fearsome Roar 143766, tank stack, P9, CD 11) / dbm_soo_timings.md L74 (FearsomeRoar 11)",
+        "note": "la spec porte l'ID 143766 ; le dégât loggé est 143426 (cône frontal du roar)"
+      },
+      "94794": {
+        "name": "Rocket Fuel Leak",
+        "class": "unknown",
+        "how": "ID hors-kit (legacy pré-MoP) non documenté pour Thok — la seule mention locale est iron_juggernaut_ai.go L48 qui l'exclut comme « non-boss noise » sur IJ 25H ; vraisemblablement environnemental, pas une mécanique du boss",
+        "target": "random",
+        "source_ref": "iron_juggernaut_ai.go L48 (exclu comme noise) — non documenté pour Thok",
+        "dbm_status": "absent de DBM-MoP (grep clone complet) — conforte la lecture « bruit environnemental hors-kit »"
+      },
+      "144067": {
+        "name": "Blood Frenzy",
+        "class": "unavoidable",
+        "how": "dégâts de la phase Blood Frenzy : 144067 est le trigger d'entrée en frénésie (DBM l'écoute en UNIT_SPELLCAST_SUCCEEDED « faster than combatlog » pour annoncer la phase 143440 et couper les timers breaths/screech) — aucune alerte d'évitement propre à cet ID ; l'évitement individuel pendant la frénésie relève du Fixate 143445 (SpecialWarningRun)",
+        "target": "all",
+        "source_ref": "DBM ThokTheBloodthirsty.lua:L322-334 (trigger 144067 → specWarnBloodFrenzy 143440, annulation timers P1) + L55 (Run sur Fixate 143445) / soo_encounter_spec.md L482 (Blood Frenzy 143440, buff escalade)"
+      }
+    },
+    "notes_hm": "HM : Frenzy plus rapide, breaths plus durs (spec L476) ; cadence des drinks HP/Frenzy-driven donc plus fréquente en HM (pas de timer DBM — dbm L73-76). Structure : phases boss coupées par les drinks (~190s consistant, puis ~360s/~450s dérivant avec le kill-speed) ; pendant un drink le boss reste tapable par les RANGED, seuls les melee perdent ~40s d'uptime (P4 melee-displacement, ~20-25 % de deadtime melee agrégé — thok_ai.go L8-34). Tank : breaths typés par chaudron bu (Acid/Frost/Scorching 143780/143773/143767, CD 9.5-11 — spec L483). Sol par drink : Icy/Burning/Corrosive Blood (spec L487). Fixate 143445 : courir (spec L486). Frozen Solid 143777 : joueurs gelés, P7 (spec L488). Captifs/Key 146589 : sauver les captifs déclenche les drinks (spec L489).",
+    "interruptibles": [
+      {"id": 143343, "name": "Deafening Screech", "caster": "Thok — CAVEAT RÉSOLU PAR DBM : ce n'est PAS un kick sur le boss ; le warning DBM est NewSpecialWarningCast restreint au rôle SpellCaster (ThokTheBloodthirsty.lua L52) = avertir les casters de caler leurs casts avant le screech (qui interrompt les casts des joueurs) — la mention spec L485 « à interrompre » est à lire côté joueurs, pas côté boss ; entrée conservée pour traçabilité"}
+    ],
+    "dispellables": []
+  },
+  "trash": {
+    "source": "DBM SoOTrash.lua (DBM-MoP/DBM-Raids-MoP/SiegeOfOrgrimmar/SoOTrash.lua) — mécaniques notables du trash de l'instance",
+    "mechanics": [
+      {"id": 147200, "name": "Fracture", "dbm_alert": "NewTargetAnnounce + NewSpecialWarningTarget (off par défaut)", "class": "unavoidable", "how": "frappe ciblée des adds pré-Galakras (même kit que Fracture boss 146899/146901), annoncée sans directive de mouvement — charge heal", "source_ref": "DBM SoOTrash.lua:L19/L25 + L36-38 (filtré si Galakras engagé)"},
+      {"id": 146728, "name": "Chain Heal", "dbm_alert": "NewCastAnnounce + NewSpecialWarningInterrupt", "class": "interruptible", "how": "soin canalisé des shamans trash : à interrompre (warning si la source est votre target/focus)", "source_ref": "DBM SoOTrash.lua:L20/L26 + L49-53"},
+      {"id": 145553, "name": "Bribe", "dbm_alert": "NewTargetAnnounce (off par défaut)", "class": "unavoidable", "how": "contrôle ciblé (DBM le garde surtout pour repérer les MC potentiels de tank/heal) — subi par la cible, géré par le raid", "source_ref": "DBM SoOTrash.lua:L21 + L41-42"},
+      {"id": 146680, "name": "Locked On", "dbm_alert": "NewTargetAnnounce + NewSpecialWarningRun (via RAID_BOSS_WHISPER « Superheated »)", "class": "avoidable", "how": "lock-on de siege engineer sur un joueur : la cible COURT (Run), les autres s'écartent du tracé", "source_ref": "DBM SoOTrash.lua:L22/L28 + L61-63"},
+      {"id": 147328, "name": "Kor'kron War Banner", "dbm_alert": "NewSpecialWarningSwitch (-Healer)", "class": "reducible", "how": "bannière qui buffe les adds : switch DPS pour la détruire — pression réduite par la vitesse de switch (même bannière qu'en P1 Galakras)", "source_ref": "DBM SoOTrash.lua:L24 + L39-40"},
+      {"id": 147884, "name": "Infusion", "dbm_alert": "NewSpecialWarningMove (flag Tank)", "class": "avoidable", "how": "cast trash avec directive de mouvement explicite côté tank : s'écarter au cast", "source_ref": "DBM SoOTrash.lua:L27 + L54-55"},
+      {"id": -8212, "name": "Crawler Mine (fixate)", "dbm_alert": "NewSpecialWarningYou (via RAID_BOSS_WHISPER « Detonate » ; id = section EJ -8212, pas un spellID)", "class": "avoidable", "how": "mine qui fixate un joueur : le ciblé kite/s'écarte avant la détonation", "source_ref": "DBM SoOTrash.lua:L29 + L64-66"}
+    ]
+  }
+}

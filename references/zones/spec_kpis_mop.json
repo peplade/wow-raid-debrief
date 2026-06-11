@@ -1,0 +1,1803 @@
+{
+ "Warlock-Demonology": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 686,
+    "name": "Shadow Bolt"
+   },
+   {
+    "id": 6353,
+    "name": "Soul Fire",
+    "note": "version Meta = 104027 (wowsims soulfire.go)"
+   },
+   {
+    "id": 105174,
+    "name": "Hand of Gul'dan",
+    "note": "2 charges / recharge 15s (wowsims hand_of_guldan.go L125-126); impact = 86040"
+   },
+   {
+    "id": 103964,
+    "name": "Touch of Chaos",
+    "note": "filler en Metamorphosis"
+   },
+   {
+    "id": 603,
+    "name": "Doom",
+    "note": "cast en Metamorphosis uniquement"
+   },
+   {
+    "id": 172,
+    "name": "Corruption"
+   },
+   {
+    "id": 1454,
+    "name": "Life Tap"
+   },
+   {
+    "id": 103958,
+    "name": "Metamorphosis",
+    "note": "toggle entree/sortie, gating Demonic Fury"
+   },
+   {
+    "id": 1949,
+    "name": "Hellfire",
+    "note": "AoE hors Meta"
+   },
+   {
+    "id": 104025,
+    "name": "Immolation Aura",
+    "note": "AoE en Meta, CD 15s"
+   },
+   {
+    "id": 77799,
+    "name": "Fel Flame",
+    "note": "filler movement"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 146739,
+    "name": "Corruption",
+    "target": "enemy",
+    "note": "debuff log 5.4 = 146739 (Hekili WarlockDemonology.lua + simc tooltip xref); le cast reste 172"
+   },
+   {
+    "id": 603,
+    "name": "Doom",
+    "target": "enemy",
+    "note": "uptime vise ~100% sur cible longue; refresh en Meta"
+   },
+   {
+    "id": 47960,
+    "name": "Shadowflame",
+    "target": "enemy",
+    "note": "DoT 6s max 2 stacks pose par Hand of Gul'dan - fenetres, pas un uptime continu (wowsims hand_of_guldan.go)"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 113861,
+    "name": "Dark Soul: Knowledge",
+    "cd_s": 120,
+    "kind": "burst"
+   },
+   {
+    "id": 104316,
+    "name": "Imp Swarm",
+    "cd_s": 120,
+    "kind": "burst",
+    "note": "necessite Glyph of Imp Swarm (wowsims demonology/glyphs.go)"
+   },
+   {
+    "id": 18540,
+    "name": "Summon Doomguard",
+    "cd_s": 600,
+    "kind": "burst"
+   },
+   {
+    "id": 89751,
+    "name": "Felstorm (Felguard)",
+    "cd_s": 45,
+    "kind": "pet",
+    "note": "cast pet, visible comme cast du Felguard"
+   },
+   {
+    "id": 108501,
+    "name": "Grimoire of Service",
+    "cd_s": 120,
+    "kind": "burst",
+    "note": "talent"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 104773,
+    "name": "Unending Resolve",
+    "cd_s": 180,
+    "note": "CD source simc sc_spell_data.inc (180000ms)"
+   },
+   {
+    "id": 110913,
+    "name": "Dark Bargain",
+    "cd_s": 180,
+    "note": "talent T3; CD simc"
+   },
+   {
+    "id": 108416,
+    "name": "Sacrificial Pact",
+    "cd_s": 60,
+    "note": "talent T3; CD simc"
+   },
+   {
+    "id": 6229,
+    "name": "Twilight Ward",
+    "cd_s": 30,
+    "note": "CD simc"
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 103958,
+    "name": "Metamorphosis",
+    "what": "uptime",
+    "note": "gate par Demonic Fury, pas par CD - uptime correle a la generation de fury"
+   },
+   {
+    "id": 122355,
+    "name": "Molten Core",
+    "what": "consommation",
+    "note": "stacks consommes par Soul Fire; procs expires = perte"
+   },
+   {
+    "id": 113861,
+    "name": "Dark Soul: Knowledge",
+    "what": "burst-align",
+    "note": "trinkets/potion doivent tomber dedans (Hekili .simc L46-49)"
+   }
+  ],
+  "resources": "demonic fury (power id 109145, Hekili WarlockDemonology.lua); cap 1000 = gaspillage",
+  "exec_rules": [
+   "Corruption ne tombe jamais : recast immediat si !ticking (Hekili WarlockDemonology.simc L12), refresh si remains<=7 hors Meta (L57) - uptime cible >95%",
+   "Doom maintenu pendant les fenetres Meta : refresh si percent_increase>=25 ou remains<=62 sous Bloodlust (Hekili .simc L66-67)",
+   "Hand of Gul'dan ne cape jamais a 2 charges : cast a charges=2 ou charge quasi prete (Hekili .simc L53/L69 ; charges=2/15s wowsims) - compter le temps passe a 2 charges",
+   "Soul Fire consomme les procs Molten Core (buff 122355) hors Meta (Hekili .simc L54) et en execute <25% - procs MC expires = erreur",
+   "Metamorphosis s'ouvre a fury haute (>=250 sous BL, >=500 en fin de cible, Hekili .simc L25/L78) et on sort quand la fury est depensee - Demonic Fury ne doit jamais caper a 1000",
+   "Dark Soul: Knowledge a CD (120s) avec trinkets/potion alignes dessus (Hekili .simc L46-49) - ratio DS utilises / possibles"
+  ],
+  "sources": [
+   "Hekili Priorities/WarlockDemonology.simc",
+   "Hekili MistsOfPandaria/WarlockDemonology.lua",
+   "wowsims sim/warlock/demonology/*.go",
+   "wowsims sim/warlock/*.go",
+   "simc engine/dbc/sc_spell_data.inc (CDs defensifs)"
+  ]
+ },
+ "Priest-Shadow": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 8092,
+    "name": "Mind Blast"
+   },
+   {
+    "id": 15407,
+    "name": "Mind Flay"
+   },
+   {
+    "id": 589,
+    "name": "Shadow Word: Pain"
+   },
+   {
+    "id": 34914,
+    "name": "Vampiric Touch"
+   },
+   {
+    "id": 2944,
+    "name": "Devouring Plague",
+    "note": "DoT applique = 127626 (wowsims devouring_plague.go commentaire)"
+   },
+   {
+    "id": 32379,
+    "name": "Shadow Word: Death"
+   },
+   {
+    "id": 73510,
+    "name": "Mind Spike",
+    "note": "uniquement sous proc Surge of Darkness en mono-cible"
+   },
+   {
+    "id": 48045,
+    "name": "Mind Sear",
+    "note": "AoE 3+"
+   },
+   {
+    "id": 34433,
+    "name": "Shadowfiend"
+   },
+   {
+    "id": 123040,
+    "name": "Mindbender",
+    "note": "talent, remplace Shadowfiend"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 589,
+    "name": "Shadow Word: Pain",
+    "target": "enemy",
+    "note": "uptime cible >95%"
+   },
+   {
+    "id": 34914,
+    "name": "Vampiric Touch",
+    "target": "enemy",
+    "note": "uptime cible >95%"
+   },
+   {
+    "id": 2944,
+    "name": "Devouring Plague",
+    "target": "enemy",
+    "note": "fenetres a 3 orbes, pas un uptime continu; tick id 127626"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 34433,
+    "name": "Shadowfiend",
+    "cd_s": 180,
+    "kind": "burst+mana"
+   },
+   {
+    "id": 123040,
+    "name": "Mindbender",
+    "cd_s": 60,
+    "kind": "burst+mana",
+    "note": "talent; CD 60s (wowsims mindbender.go time.Minute)"
+   },
+   {
+    "id": 10060,
+    "name": "Power Infusion",
+    "cd_s": 120,
+    "kind": "burst",
+    "note": "talent"
+   },
+   {
+    "id": 120696,
+    "name": "Halo",
+    "cd_s": 40,
+    "kind": "burst",
+    "note": "talent; id ecole Shadow (wowsims shadow/halo.go); version Holy = 120517 (Hekili)"
+   },
+   {
+    "id": 127632,
+    "name": "Cascade",
+    "cd_s": 25,
+    "kind": "burst",
+    "note": "talent; version Shadow (wowsims); Holy = 121135"
+   },
+   {
+    "id": 122128,
+    "name": "Divine Star",
+    "cd_s": 15,
+    "kind": "burst",
+    "note": "talent; version Shadow (wowsims); Holy = 110744"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 47585,
+    "name": "Dispersion",
+    "cd_s": 120
+   },
+   {
+    "id": 15286,
+    "name": "Vampiric Embrace",
+    "cd_s": 180,
+    "note": "CD raid-heal; 180s par simc sc_spell_data (Hekili PriestShadow.lua L1784 dit 60 - divergent, simc retenu)"
+   },
+   {
+    "id": 19236,
+    "name": "Desperate Prayer",
+    "cd_s": 90,
+    "note": "talent (Hekili PriestShadow.lua L908)"
+   },
+   {
+    "id": 586,
+    "name": "Fade",
+    "cd_s": 30
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 15473,
+    "name": "Shadowform",
+    "what": "uptime",
+    "note": "doit etre ~100%"
+   },
+   {
+    "id": 87160,
+    "name": "Surge of Darkness",
+    "what": "consommation",
+    "note": "procs (max 2) consommes par Mind Spike; expires = perte (wowsims shadow/talents.go + Hekili)"
+   },
+   {
+    "id": 124430,
+    "name": "Divine Insight",
+    "what": "consommation",
+    "note": "talent - Mind Blast instant gratuit"
+   },
+   {
+    "id": 77487,
+    "name": "Shadow Orb",
+    "what": "stacks",
+    "note": "ressource affichee en aura 77487 (Hekili PriestShadow.lua); les gains sont des events RESOURCE, DP a 3 orbes"
+   },
+   {
+    "id": 123254,
+    "name": "Twist of Fate",
+    "what": "uptime execute",
+    "note": "talent, si pris"
+   }
+  ],
+  "resources": "shadow orbs (3 max, generes par Mind Blast/SW:D) + mana",
+  "exec_rules": [
+   "Devouring Plague uniquement a 3 Shadow Orbs ET avec SW:P/VT >3s restants (Hekili PriestShadow.simc L23) - tout DP sous 3 orbes est une erreur",
+   "Mind Blast a CD (8s, Hekili PriestShadow.lua L?cd=8) - le nombre de MB doit approcher duree/8s",
+   "SW:P et VT ne tombent jamais : refresh a ticks_remain=1 ou remains<cast+tick (Hekili .simc L27-30) - uptime >95% chacun",
+   "Shadow Word: Death utilise pendant l'execute <20% avec le reset (buff interne reset SWD, .simc L22/L26) - 2 SWD par fenetre",
+   "Mind Spike SEULEMENT avec proc Surge of Darkness en mono-cible (.simc L36) - un Mind Spike sans proc efface les DoTs",
+   "Mind Flay = filler clippe des que Mind Blast/SWD est pret ou qu'un DoT expire (.simc L38); Shadowfiend/Mindbender a CD (.simc L17)"
+  ],
+  "sources": [
+   "Hekili Priorities/PriestShadow.simc",
+   "Hekili MistsOfPandaria/PriestShadow.lua",
+   "wowsims sim/priest/shadow/*.go",
+   "wowsims sim/priest/*.go",
+   "simc sc_spell_data.inc (VE 180s)"
+  ]
+ },
+ "Hunter-Survival": {
+  "role": "dps",
+  "gcd_base_ms": 1000,
+  "gcd_note": "GCD chasseur = 1.0s fixe (wowsims arcane_shot.go/cobra_shot.go GCD: time.Second)",
+  "casts_rotation": [
+   {
+    "id": 53301,
+    "name": "Explosive Shot"
+   },
+   {
+    "id": 3674,
+    "name": "Black Arrow"
+   },
+   {
+    "id": 3044,
+    "name": "Arcane Shot"
+   },
+   {
+    "id": 77767,
+    "name": "Cobra Shot"
+   },
+   {
+    "id": 2643,
+    "name": "Multi-Shot"
+   },
+   {
+    "id": 53351,
+    "name": "Kill Shot"
+   },
+   {
+    "id": 1978,
+    "name": "Serpent Sting"
+   },
+   {
+    "id": 117050,
+    "name": "Glaive Toss",
+    "note": "talent"
+   },
+   {
+    "id": 120360,
+    "name": "Barrage",
+    "note": "talent"
+   },
+   {
+    "id": 109259,
+    "name": "Powershot",
+    "note": "talent"
+   },
+   {
+    "id": 13812,
+    "name": "Explosive Trap",
+    "note": "wowsims explosive_trap.go=13812; Hekili lua=13813 (debuff) - les deux ids peuvent apparaitre"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 118253,
+    "name": "Serpent Sting",
+    "target": "enemy",
+    "note": "rafraichi par Cobra Shot - uptime ~100% [id corrigé 1978->118253 d'après events]"
+   },
+   {
+    "id": 3674,
+    "name": "Black Arrow",
+    "target": "enemy",
+    "note": "uptime eleve = BA a CD; CD 24s"
+   },
+   {
+    "id": 131900,
+    "name": "A Murder of Crows",
+    "target": "enemy",
+    "note": "talent, DoT 15s (wowsims a_murder_of_crows.go)"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 3045,
+    "name": "Rapid Fire",
+    "cd_s": 300,
+    "kind": "burst"
+   },
+   {
+    "id": 121818,
+    "name": "Stampede",
+    "cd_s": 300,
+    "kind": "burst"
+   },
+   {
+    "id": 131894,
+    "name": "A Murder of Crows",
+    "cd_s": 120,
+    "kind": "burst",
+    "note": "talent; reset si la cible meurt"
+   },
+   {
+    "id": 120679,
+    "name": "Dire Beast",
+    "cd_s": 45,
+    "kind": "burst",
+    "note": "talent; CD 45s (Hekili HunterSurvival.lua L1362)"
+   },
+   {
+    "id": 82726,
+    "name": "Fervor",
+    "cd_s": 30,
+    "kind": "focus",
+    "note": "talent"
+   },
+   {
+    "id": 117050,
+    "name": "Glaive Toss",
+    "cd_s": 15,
+    "kind": "rotation",
+    "note": "talent, a CD"
+   },
+   {
+    "id": 120360,
+    "name": "Barrage",
+    "cd_s": 20,
+    "kind": "rotation",
+    "note": "talent (CD Hekili=20s)"
+   },
+   {
+    "id": 109259,
+    "name": "Powershot",
+    "cd_s": 45,
+    "kind": "rotation",
+    "note": "talent"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 19263,
+    "name": "Deterrence",
+    "cd_s": 90,
+    "note": "CD Hekili HunterSurvival.lua L895"
+   },
+   {
+    "id": 109304,
+    "name": "Exhilaration",
+    "cd_s": 120,
+    "note": "id corrige via simc (Hekili lua dit 109260 = copie d'Aspect of the Iron Hawk, errone); talent"
+   },
+   {
+    "id": 5384,
+    "name": "Feign Death",
+    "cd_s": null,
+    "note": "pas de CD significatif; utile pour drop aggro/spells"
+   },
+   {
+    "id": 781,
+    "name": "Disengage",
+    "cd_s": 20,
+    "note": "mobilite/survie"
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 56453,
+    "name": "Lock and Load",
+    "what": "consommation",
+    "note": "proc = 2-3 Explosive Shot gratuits a enchainer; charges perdues = grosse erreur (buff aura 56453, passif 56343)"
+   },
+   {
+    "id": 34720,
+    "name": "Thrill of the Hunt",
+    "what": "consommation",
+    "note": "talent - 3 Arcane/Multi-Shot a cout reduit"
+   },
+   {
+    "id": 3045,
+    "name": "Rapid Fire",
+    "what": "uptime-burst"
+   },
+   {
+    "id": 13165,
+    "name": "Aspect of the Hawk",
+    "what": "uptime",
+    "note": "ou Iron Hawk 109260 (talent) - l'un des deux ~100% uptime"
+   },
+   {
+    "id": 1130,
+    "name": "Hunter's Mark",
+    "what": "uptime debuff",
+    "note": "sur la cible si pas de marque automatique"
+   }
+  ],
+  "resources": "focus (cap 100; temps passe >=90 focus = focus cape, perte de regen)",
+  "exec_rules": [
+   "Explosive Shot a CD (6s, Hekili HunterSurvival.lua L696) et ENCHAINE pendant Lock and Load (Hekili HunterSurvival.simc L27/L83) - LnL procs non consommes = erreur majeure",
+   "Serpent Sting applique des l'ouverture et jamais retombe (refresh par Cobra Shot, .simc L31/L48) - uptime ~100%",
+   "Black Arrow releve a CD (24s) des que focus>=35 et cible vit >=8s (.simc L40) - ratio casts/possibles",
+   "Arcane Shot en dump seulement si focus>=50 avec BA en CD>=4s, ou focus>=70 (.simc L14/L44) - jamais caper le focus a 100",
+   "Rapid Fire / Stampede / AMoC / Fervor utilises 'as many times as possible' (.simc L102-107) - ratio utilises/possibles proche de 1",
+   "Kill Shot a CD des que la cible passe sous 20% (.simc L37/L85)"
+  ],
+  "sources": [
+   "Hekili Priorities/HunterSurvival.simc",
+   "Hekili MistsOfPandaria/HunterSurvival.lua",
+   "wowsims sim/hunter/*.go",
+   "wowsims sim/hunter/survival/*.go",
+   "simc sc_spell_data.inc (Exhilaration)"
+  ]
+ },
+ "Mage-Frost": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 116,
+    "name": "Frostbolt"
+   },
+   {
+    "id": 44614,
+    "name": "Frostfire Bolt",
+    "note": "consomme Brain Freeze"
+   },
+   {
+    "id": 30455,
+    "name": "Ice Lance",
+    "note": "consomme Fingers of Frost; instant en mouvement"
+   },
+   {
+    "id": 84714,
+    "name": "Frozen Orb",
+    "note": "degats = 84721"
+   },
+   {
+    "id": 44457,
+    "name": "Living Bomb",
+    "note": "bombe talent"
+   },
+   {
+    "id": 114923,
+    "name": "Nether Tempest",
+    "note": "bombe talent"
+   },
+   {
+    "id": 112948,
+    "name": "Frost Bomb",
+    "note": "bombe talent"
+   },
+   {
+    "id": 12051,
+    "name": "Evocation",
+    "note": "entretien Invoker's Energy (talent Invocation) + mana"
+   },
+   {
+    "id": 10,
+    "name": "Blizzard",
+    "note": "AoE"
+   },
+   {
+    "id": 120,
+    "name": "Cone of Cold",
+    "note": "AoE 5+"
+   },
+   {
+    "id": 1449,
+    "name": "Arcane Explosion",
+    "note": "AoE 5+"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 44457,
+    "name": "Living Bomb",
+    "target": "enemy",
+    "note": "si talent - jusqu'a 3 cibles (Hekili MageFrost.simc L38)"
+   },
+   {
+    "id": 114923,
+    "name": "Nether Tempest",
+    "target": "enemy",
+    "note": "si talent - multi-dot 5 cibles (L39); debuff applique = 114954"
+   },
+   {
+    "id": 112948,
+    "name": "Frost Bomb",
+    "target": "enemy",
+    "note": "si talent (L40)"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 12472,
+    "name": "Icy Veins",
+    "cd_s": 180,
+    "kind": "burst"
+   },
+   {
+    "id": 108978,
+    "name": "Alter Time",
+    "cd_s": 180,
+    "kind": "burst",
+    "note": "buff actif = 110909; pop a 2 stacks FoF + Brain Freeze + IV (Hekili .simc L31)"
+   },
+   {
+    "id": 84714,
+    "name": "Frozen Orb",
+    "cd_s": 60,
+    "kind": "burst+FoF"
+   },
+   {
+    "id": 55342,
+    "name": "Mirror Image",
+    "cd_s": 120,
+    "kind": "burst"
+   },
+   {
+    "id": 12051,
+    "name": "Evocation",
+    "cd_s": 120,
+    "kind": "mana/buff"
+   },
+   {
+    "id": 12043,
+    "name": "Presence of Mind",
+    "cd_s": 90,
+    "kind": "utility",
+    "note": "talent"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 45438,
+    "name": "Ice Block",
+    "cd_s": 300
+   },
+   {
+    "id": 11426,
+    "name": "Ice Barrier",
+    "cd_s": 25,
+    "note": "a entretenir quasi a CD sur degats raid"
+   },
+   {
+    "id": 115610,
+    "name": "Temporal Shield",
+    "cd_s": 25,
+    "note": "talent T2; CD simc 25000ms"
+   },
+   {
+    "id": 11958,
+    "name": "Cold Snap",
+    "cd_s": 180,
+    "note": "heal 30% + reset Ice Block/CoC/Frost Nova"
+   },
+   {
+    "id": 110959,
+    "name": "Greater Invisibility",
+    "cd_s": 90,
+    "note": "talent"
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 44544,
+    "name": "Fingers of Frost",
+    "what": "consommation",
+    "note": "aura de proc visible en log (Hekili MageFrost.lua); wowsims trace en interne 112965 (passif). Max 2 charges - ne jamais caper",
+    "alt_id": 112965
+   },
+   {
+    "id": 57761,
+    "name": "Brain Freeze",
+    "what": "consommation",
+    "note": "aura de proc (Hekili); wowsims utilise 44549 (passif). FFB gratuit - proc expire = perte",
+    "alt_id": 44549
+   },
+   {
+    "id": 116257,
+    "name": "Invoker's Energy",
+    "what": "uptime",
+    "note": "talent Invocation - uptime ~100% via Evocation (Hekili .simc L19)"
+   },
+   {
+    "id": 116011,
+    "name": "Rune of Power",
+    "what": "uptime",
+    "note": "si talent - le mage doit etre dessus"
+   },
+   {
+    "id": 131078,
+    "name": "Icy Veins",
+    "what": "uptime-burst",
+    "note": " [131078 = version glyphée, observée dans les events ; 12472 jamais vu]"
+   },
+   {
+    "id": 148022,
+    "name": "Icicle",
+    "what": "stacks",
+    "note": "mastery MoP Classic (wowsims sim/mage/icicles.go + simc) - 5 stacks max"
+   }
+  ],
+  "resources": "mana (Evocation si <45k ou Invoker's Energy expire, Hekili MageFrost.simc L19-20)",
+  "exec_rules": [
+   "Ice Lance immediatement a 2 stacks Fingers of Frost (Hekili MageFrost.simc L34) - le temps passe a 2 charges FoF = procs perdus",
+   "Frostfire Bolt consomme chaque Brain Freeze (.simc L35/L44) - procs BF expires comptabilises",
+   "La bombe talent (Living Bomb / Nether Tempest / Frost Bomb) est maintenue en continu sur la cible (.simc L38-40)",
+   "Frozen Orb a CD (60s) (.simc L43) et Icy Veins a CD (180s) cale sur Alter Time (.simc L29)",
+   "Alter Time pop seulement avec 2 FoF + procs/buffs burst actifs (.simc L31) - un Alter Time 'a vide' est une erreur",
+   "Evocation avant que Invoker's Energy n'expire (uptime IE ~100%) ou mana <45k (.simc L19-20); Frostbolt = filler (L46)"
+  ],
+  "sources": [
+   "Hekili Priorities/MageFrost.simc",
+   "Hekili MistsOfPandaria/MageFrost.lua",
+   "wowsims sim/mage/*.go",
+   "wowsims sim/mage/frost/*.go",
+   "simc sc_spell_data.inc (Temporal Shield, Icicle)"
+  ]
+ },
+ "DeathKnight-Blood": {
+  "role": "tank",
+  "gcd_base_ms": 1000,
+  "gcd_note": "abilities coeur en GCD 1.0s (wowsims death_strike.go / heart_strike.go GCD: core.GCDMin)",
+  "casts_rotation": [
+   {
+    "id": 49998,
+    "name": "Death Strike"
+   },
+   {
+    "id": 55050,
+    "name": "Heart Strike"
+   },
+   {
+    "id": 56815,
+    "name": "Rune Strike"
+   },
+   {
+    "id": 48721,
+    "name": "Blood Boil"
+   },
+   {
+    "id": 77575,
+    "name": "Outbreak"
+   },
+   {
+    "id": 45477,
+    "name": "Icy Touch"
+   },
+   {
+    "id": 45462,
+    "name": "Plague Strike"
+   },
+   {
+    "id": 50842,
+    "name": "Pestilence"
+   },
+   {
+    "id": 43265,
+    "name": "Death and Decay"
+   },
+   {
+    "id": 114866,
+    "name": "Soul Reaper (Blood)",
+    "note": "execute <35%; id generique wowsims = 114867"
+   },
+   {
+    "id": 57330,
+    "name": "Horn of Winter",
+    "note": "buff + 10 RP"
+   },
+   {
+    "id": 108196,
+    "name": "Death Siphon",
+    "note": "talent"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 55078,
+    "name": "Blood Plague",
+    "target": "enemy",
+    "note": "uptime ~100% (Outbreak/Plague Strike/Pestilence)"
+   },
+   {
+    "id": 55095,
+    "name": "Frost Fever",
+    "target": "enemy",
+    "note": "uptime ~100% (Outbreak/Icy Touch/Pestilence)"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 49028,
+    "name": "Dancing Rune Weapon",
+    "cd_s": 90,
+    "kind": "mitigation+threat",
+    "note": "buff parry; Hekili l'utilise quasi a CD sur degats entrants (DeathKnightBlood.simc L28)"
+   },
+   {
+    "id": 49222,
+    "name": "Bone Shield",
+    "cd_s": 60,
+    "kind": "mitigation",
+    "note": "pre-pull puis a CD (.simc L5/L29)"
+   },
+   {
+    "id": 47568,
+    "name": "Empower Rune Weapon",
+    "cd_s": 300,
+    "kind": "ressource",
+    "note": "panic runes (.simc L39)"
+   },
+   {
+    "id": 42650,
+    "name": "Army of the Dead",
+    "cd_s": 600,
+    "kind": "burst",
+    "note": "pre-pull usuellement"
+   },
+   {
+    "id": 45529,
+    "name": "Blood Tap",
+    "cd_s": 1,
+    "kind": "ressource",
+    "note": "talent - consomme 5 Blood Charges (114851) pour 1 rune"
+   },
+   {
+    "id": 115989,
+    "name": "Unholy Blight",
+    "cd_s": 90,
+    "kind": "diseases",
+    "note": "talent"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 55233,
+    "name": "Vampiric Blood",
+    "cd_s": 60,
+    "note": "<50% HP, combo avec Rune Tap (Hekili .simc L33-34)"
+   },
+   {
+    "id": 48982,
+    "name": "Rune Tap",
+    "cd_s": 30,
+    "note": "<40% HP ou fenetre Vamp Blood"
+   },
+   {
+    "id": 48792,
+    "name": "Icebound Fortitude",
+    "cd_s": 180,
+    "note": "90s avec glyphe (Hekili DeathKnightBlood.lua L2462-2463); panic <30% HP"
+   },
+   {
+    "id": 48707,
+    "name": "Anti-Magic Shell",
+    "cd_s": 45,
+    "note": "sur burst magique previsible (.simc L40)"
+   },
+   {
+    "id": 48743,
+    "name": "Death Pact",
+    "cd_s": 120,
+    "note": "talent"
+   },
+   {
+    "id": 119975,
+    "name": "Conversion",
+    "cd_s": null,
+    "note": "talent - toggle RP->HP, pas de CD sourceable"
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 77535,
+    "name": "Blood Shield",
+    "what": "uptime+absorb",
+    "note": "mastery absorb post-Death Strike (wowsims blood/mastery.go)"
+   },
+   {
+    "id": 49222,
+    "name": "Bone Shield",
+    "what": "uptime+charges",
+    "note": "uptime vise tres haut"
+   },
+   {
+    "id": 81141,
+    "name": "Crimson Scourge",
+    "what": "consommation",
+    "note": "proc = Blood Boil/D&D gratuit (Hekili .simc L57-58)"
+   },
+   {
+    "id": 50421,
+    "name": "Scent of Blood",
+    "what": "stacks au Death Strike",
+    "note": "DS a >=3 stacks pour gros heal/shield (.simc L61); max 5"
+   },
+   {
+    "id": 114851,
+    "name": "Blood Charge",
+    "what": "stacks",
+    "note": "talent Blood Tap - ne pas caper a 12"
+   },
+   {
+    "id": 48263,
+    "name": "Blood Presence",
+    "what": "uptime",
+    "note": "doit etre 100%"
+   },
+   {
+    "id": 132365,
+    "name": "Vengeance",
+    "what": "valeur AP",
+    "note": "proxy de l'agressivite du tanking"
+   }
+  ],
+  "resources": "runes (2B/2F/2U + Death) + runic power; RP cape = perte (dump Rune Strike)",
+  "exec_rules": [
+   "Death Strike est REACTIF : panic HP bas ou gros degats predits, et anti-cap de runes (Hekili DeathKnightBlood.simc L20/L24) - mesurer le delai DS apres un hit >X% HP et les DS 'a vide' (HP plein, pas de degats recents)",
+   "Diseases uptime ~100% : Outbreak des qu'un des deux DoTs manque (.simc L43/L54)",
+   "Crimson Scourge consomme : Blood Boil/D&D gratuit des le proc (.simc L57-58)",
+   "Death Strike a Scent of Blood >=3 stacks pour maximiser heal+Blood Shield (.simc L61)",
+   "Vampiric Blood <50% + Rune Tap dans la fenetre, IBF <30%, AMS sur burst magique (.simc L33-40) - verifier 'CD defensif dispo mais pas utilise' avant chaque mort",
+   "Runic Power jamais cape : Rune Strike en dump pour pecher Runic Corruption/Empowerment (.simc L51/L63)",
+   "Soul Reaper sur cible <35% (.simc L55)"
+  ],
+  "sources": [
+   "Hekili Priorities/DeathKnightBlood.simc",
+   "Hekili MistsOfPandaria/DeathKnightBlood.lua",
+   "wowsims sim/death_knight/*.go",
+   "wowsims sim/death_knight/blood/*.go"
+  ]
+ },
+ "Druid-Guardian": {
+  "role": "tank",
+  "gcd_base_ms": 1500,
+  "gcd_note": "GCD 1.5s fixe en forme ours (wowsims mangle.go GCD: core.GCDDefault)",
+  "casts_rotation": [
+   {
+    "id": 33878,
+    "name": "Mangle"
+   },
+   {
+    "id": 77758,
+    "name": "Thrash"
+   },
+   {
+    "id": 33745,
+    "name": "Lacerate"
+   },
+   {
+    "id": 6807,
+    "name": "Maul",
+    "note": "dump de rage hors besoin Savage Defense / consomme Tooth and Claw"
+   },
+   {
+    "id": 779,
+    "name": "Swipe",
+    "note": "AoE"
+   },
+   {
+    "id": 16857,
+    "name": "Faerie Fire (Feral)",
+    "note": "id ours (Hekili DruidGuardian.lua faerie_fire_bear); wowsims registre 770"
+   },
+   {
+    "id": 99,
+    "name": "Demoralizing Roar"
+   },
+   {
+    "id": 62606,
+    "name": "Savage Defense"
+   },
+   {
+    "id": 22842,
+    "name": "Frenzied Regeneration"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 77758,
+    "name": "Thrash",
+    "target": "enemy",
+    "note": "bleed a maintenir (le snapshot Hekili priorise 3 Thrash dans la liste single_target)"
+   },
+   {
+    "id": 33745,
+    "name": "Lacerate",
+    "target": "enemy",
+    "note": "bleed 3 stacks a maintenir"
+   },
+   {
+    "id": 113746,
+    "name": "Weakened Armor",
+    "target": "enemy",
+    "note": "3 stacks via Faerie Fire"
+   },
+   {
+    "id": 135597,
+    "name": "Tooth and Claw (debuff)",
+    "target": "enemy",
+    "note": "absorb du prochain auto de la cible apres Maul empowered (wowsims guardian/tooth_and_claw.go L17; Hekili lua dit 135601 - divergent, wowsims retenu)"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 50334,
+    "name": "Berserk",
+    "cd_s": 180,
+    "kind": "burst",
+    "note": "Mangle sans CD 10s"
+   },
+   {
+    "id": 102558,
+    "name": "Incarnation: Son of Ursoc",
+    "cd_s": 180,
+    "kind": "burst",
+    "note": "talent"
+   },
+   {
+    "id": 5229,
+    "name": "Enrage",
+    "cd_s": 60,
+    "kind": "ressource",
+    "note": "generation de rage - quasi a CD"
+   },
+   {
+    "id": 124974,
+    "name": "Nature's Vigil",
+    "cd_s": 90,
+    "kind": "burst+heal",
+    "note": "talent"
+   },
+   {
+    "id": 108292,
+    "name": "Heart of the Wild",
+    "cd_s": 360,
+    "kind": "situational",
+    "note": "talent (id guardian; resto/balance = 108288/108291 selon spec)"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 61336,
+    "name": "Survival Instincts",
+    "cd_s": 180,
+    "note": "120s avec glyphe (Hekili DruidGuardian.lua L1221)"
+   },
+   {
+    "id": 22812,
+    "name": "Barkskin",
+    "cd_s": 30,
+    "note": "30s pour Guardian (Hekili DruidGuardian.lua L1200 'Guardian gets 30s CD instead of 60s')"
+   },
+   {
+    "id": 106922,
+    "name": "Might of Ursoc",
+    "cd_s": 180,
+    "note": "+30% HP max"
+   },
+   {
+    "id": 22842,
+    "name": "Frenzied Regeneration",
+    "cd_s": 1.5,
+    "note": "pas un vrai CD : limite par la rage (CD interne 1.5s, wowsims frenzied_regeneration.go); heal scale avec rage depensee"
+   },
+   {
+    "id": 108238,
+    "name": "Renewal",
+    "cd_s": 120,
+    "note": "talent"
+   },
+   {
+    "id": 102351,
+    "name": "Cenarion Ward",
+    "cd_s": 30,
+    "note": "talent"
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 132402,
+    "name": "Savage Defense",
+    "what": "uptime vs hits",
+    "note": "buff 6s +45% dodge; 3 charges, recharge 9s (Hekili DruidGuardian.lua L1486-1488) - charges jamais capees a 3 pendant le tanking actif"
+   },
+   {
+    "id": 135286,
+    "name": "Tooth and Claw",
+    "what": "consommation",
+    "note": "proc 10s consomme par Maul empowered (wowsims guardian/tooth_and_claw.go L62) - procs expires = mitigation perdue"
+   },
+   {
+    "id": 5229,
+    "name": "Enrage",
+    "what": "usage"
+   },
+   {
+    "id": 135700,
+    "name": "Clearcasting (Omen of Clarity)",
+    "what": "consommation",
+    "note": "id guardian per Hekili DruidGuardian.lua"
+   },
+   {
+    "id": 5487,
+    "name": "Bear Form",
+    "what": "uptime",
+    "note": "~100% pour un tank"
+   },
+   {
+    "id": 132365,
+    "name": "Vengeance",
+    "what": "valeur AP"
+   }
+  ],
+  "resources": "rage (genere par Mangle/Enrage/degats subis; depense Savage Defense > Maul; FR en urgence)",
+  "exec_rules": [
+   "Savage Defense est la depense de rage prioritaire pendant le tanking actif (snapshot Hekili DruidGuardian.simc, liste mitigation entry #6 avant tout le reste) - temps a 3 charges = gaspillage",
+   "Rotation threat single-target du pack Guardian : Pulverize/Maul > Faerie Fire > Demo Roar > Thrash > Mangle > Lacerate (snapshot .simc entries #22-30) avec Mangle a CD 6s",
+   "Thrash et Lacerate maintenus en continu (le header du snapshot recommande Thrash x3 en ouverture)",
+   "Tooth and Claw consomme : Maul des que le proc 135286 est up (wowsims tooth_and_claw.go) - % procs consommes",
+   "Escalade defensive du pack : Survival Instincts > Barkskin > Frenzied Regen > Might of Ursoc (snapshot .simc defensives #9-12) - verifier CD dispo non utilise avant une mort",
+   "Frenzied Regeneration apres un gros hit (dump de rage de soin, pas de vrai CD - wowsims frenzied_regeneration.go)"
+  ],
+  "sources": [
+   "Hekili Priorities/DruidGuardian.simc (snapshot trace, entries #1-38)",
+   "Hekili MistsOfPandaria/DruidGuardian.lua",
+   "wowsims sim/druid/*.go",
+   "wowsims sim/druid/guardian/*.go"
+  ]
+ },
+ "Druid-Restoration": {
+  "role": "heal",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 774,
+    "name": "Rejuvenation"
+   },
+   {
+    "id": 33763,
+    "name": "Lifebloom",
+    "note": "bloom final = 33778"
+   },
+   {
+    "id": 48438,
+    "name": "Wild Growth"
+   },
+   {
+    "id": 18562,
+    "name": "Swiftmend",
+    "note": "heal AoE au sol = Efflorescence (wowsims swiftmend.go aoe 81269)"
+   },
+   {
+    "id": 8936,
+    "name": "Regrowth"
+   },
+   {
+    "id": 50464,
+    "name": "Nourish"
+   },
+   {
+    "id": 5185,
+    "name": "Healing Touch"
+   },
+   {
+    "id": 145518,
+    "name": "Genesis",
+    "note": "consomme les Rejuv en heal rapide"
+   },
+   {
+    "id": 145205,
+    "name": "Wild Mushroom",
+    "note": "5.4: champignon unique; Bloom = 102792 (wowsims wild_mushroom_resto.go)"
+   },
+   {
+    "id": 102351,
+    "name": "Cenarion Ward",
+    "note": "talent"
+   },
+   {
+    "id": 33786,
+    "name": "Cyclone",
+    "note": "utilitaire"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 33763,
+    "name": "Lifebloom",
+    "target": "friendly",
+    "note": "roule sur le tank, jamais retombe (refresh remains<2, Hekili DruidRestoration.simc L56) - uptime ~100%"
+   },
+   {
+    "id": 774,
+    "name": "Rejuvenation",
+    "target": "friendly",
+    "note": "blanket sur cibles <90% (L54/L70)"
+   },
+   {
+    "id": 8936,
+    "name": "Regrowth (HoT)",
+    "target": "friendly"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 740,
+    "name": "Tranquility",
+    "cd_s": 480,
+    "kind": "raid",
+    "note": "CD 8 min (Hekili DruidRestoration.lua L559); au moins 1x par combat long"
+   },
+   {
+    "id": 33891,
+    "name": "Incarnation: Tree of Life",
+    "cd_s": 180,
+    "kind": "raid",
+    "note": "talent; buff de forme = 117679 (Hekili lua L305)"
+   },
+   {
+    "id": 102342,
+    "name": "Ironbark",
+    "cd_s": 60,
+    "kind": "external",
+    "note": "-20% degats sur la cible"
+   },
+   {
+    "id": 132158,
+    "name": "Nature's Swiftness",
+    "cd_s": 60,
+    "kind": "instant",
+    "note": "Healing Touch instantane"
+   },
+   {
+    "id": 29166,
+    "name": "Innervate",
+    "cd_s": 180,
+    "kind": "mana"
+   },
+   {
+    "id": 106737,
+    "name": "Force of Nature",
+    "cd_s": 60,
+    "kind": "raid",
+    "note": "talent - treants heal"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 22812,
+    "name": "Barkskin",
+    "cd_s": 60
+   },
+   {
+    "id": 108238,
+    "name": "Renewal",
+    "cd_s": 120,
+    "note": "talent"
+   },
+   {
+    "id": 106922,
+    "name": "Might of Ursoc",
+    "cd_s": 180,
+    "note": "baseline druide (Hekili .simc L25 l'inclut pour resto)"
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 100977,
+    "name": "Harmony",
+    "what": "uptime",
+    "note": "mastery: relancee par chaque heal direct (Swiftmend/Nourish/HT/Regrowth) - uptime cible >90% (wowsims harmony.go)"
+   },
+   {
+    "id": 16870,
+    "name": "Clearcasting (Omen of Clarity)",
+    "what": "consommation",
+    "note": "Regrowth/HT gratuit (wowsims omen_of_clarity_resto.go)"
+   },
+   {
+    "id": 114108,
+    "name": "Soul of the Forest",
+    "what": "consommation",
+    "note": "talent - haste consommee par le prochain sort (wowsims soul_of_the_forest_resto.go)"
+   },
+   {
+    "id": 117679,
+    "name": "Incarnation (forme)",
+    "what": "uptime-burst",
+    "note": "fenetres ToL"
+   },
+   {
+    "id": 132158,
+    "name": "Nature's Swiftness",
+    "what": "consommation"
+   }
+  ],
+  "resources": "mana (Innervate <40%, Hekili DruidRestoration.simc L14)",
+  "exec_rules": [
+   "Lifebloom roule en continu sur le tank : refresh si remains<2s, jamais de gap (Hekili DruidRestoration.simc L56) - uptime LB sur tank ~100%",
+   "Swiftmend quasi a CD (15s) des qu'une cible est <75% (.simc L50/L58) - c'est aussi le moteur de la mastery Harmony",
+   "Harmony (mastery 100977) entretenue par un heal direct au moins toutes les 20s (Swiftmend/Nourish/HT/Regrowth) - uptime >90%",
+   "Rejuvenation en blanket sur cibles <90% sans doublon (.simc L54/L70); Genesis pour accelerer les Rejuv si cible <50% (.simc L52)",
+   "Wild Growth sur degats AoE (3+ blesses) (.simc L51); Tranquility sur gros burst raid (lowest<60% & 3+ cibles, .simc L32) - ratio Tranq utilisees/possibles",
+   "Ironbark sur le tank <50% (.simc L24) et Innervate <40% mana (.simc L14) - CD externe dispo mais non utilise avant une mort de tank = drapeau"
+  ],
+  "sources": [
+   "Hekili Priorities/DruidRestoration.simc",
+   "Hekili MistsOfPandaria/DruidRestoration.lua",
+   "wowsims sim/druid/*.go",
+   "wowsims sim/druid/restoration/restoration.go"
+  ]
+ },
+ "Shaman-Restoration": {
+  "role": "heal",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 61295,
+    "name": "Riptide"
+   },
+   {
+    "id": 331,
+    "name": "Healing Wave",
+    "note": "id via simc sc_spell_data (L30); Hekili ShamanRestoration.lua L940 donne 77472 par erreur (doublon copie de GHW)"
+   },
+   {
+    "id": 77472,
+    "name": "Greater Healing Wave"
+   },
+   {
+    "id": 8004,
+    "name": "Healing Surge"
+   },
+   {
+    "id": 1064,
+    "name": "Chain Heal"
+   },
+   {
+    "id": 73920,
+    "name": "Healing Rain"
+   },
+   {
+    "id": 5394,
+    "name": "Healing Stream Totem"
+   },
+   {
+    "id": 73680,
+    "name": "Unleash Elements",
+    "note": "Unleash Life (heal) = 73685 (wowsims unleash_elements.go)"
+   },
+   {
+    "id": 974,
+    "name": "Earth Shield"
+   },
+   {
+    "id": 77130,
+    "name": "Purify Spirit",
+    "note": "dispel"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 974,
+    "name": "Earth Shield",
+    "target": "friendly",
+    "note": "sur le tank, uptime ~100% (Hekili ShamanRestoration.simc L16)"
+   },
+   {
+    "id": 61295,
+    "name": "Riptide (HoT)",
+    "target": "friendly"
+   },
+   {
+    "id": 51945,
+    "name": "Earthliving (HoT)",
+    "target": "friendly",
+    "note": "proc de l'enchant Earthliving Weapon 51730"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 108280,
+    "name": "Healing Tide Totem",
+    "cd_s": 180,
+    "kind": "raid"
+   },
+   {
+    "id": 98008,
+    "name": "Spirit Link Totem",
+    "cd_s": 180,
+    "kind": "raid"
+   },
+   {
+    "id": 16190,
+    "name": "Mana Tide Totem",
+    "cd_s": 180,
+    "kind": "mana",
+    "note": "<70% mana (Hekili .simc L29)"
+   },
+   {
+    "id": 114049,
+    "name": "Ascendance",
+    "cd_s": 180,
+    "kind": "raid",
+    "note": "CD wowsims ascendance.go (3 min); la forme Eau resto (114052) n'existe pas dans les sources locales - le cast loggue peut differer"
+   },
+   {
+    "id": 16188,
+    "name": "Ancestral Swiftness",
+    "cd_s": 60,
+    "kind": "instant",
+    "note": "talent"
+   },
+   {
+    "id": 108281,
+    "name": "Ancestral Guidance",
+    "cd_s": 120,
+    "kind": "raid",
+    "note": "talent"
+   },
+   {
+    "id": 79206,
+    "name": "Spiritwalker's Grace",
+    "cd_s": 120,
+    "kind": "utility",
+    "note": "60s avec glyphe (Hekili ShamanRestoration.lua L1273); cast en mouvement"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 108271,
+    "name": "Astral Shift",
+    "cd_s": 90,
+    "note": "talent"
+   },
+   {
+    "id": 108270,
+    "name": "Stone Bulwark Totem",
+    "cd_s": 60,
+    "note": "talent; absorb = 114893"
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 53390,
+    "name": "Tidal Waves",
+    "what": "consommation",
+    "note": "2 charges generees par Riptide/Chain Heal, consommees par HW/GHW/Surge - caster HW/GHW sans TW = lent/cher (Hekili lua tidal_waves)"
+   },
+   {
+    "id": 52127,
+    "name": "Water Shield",
+    "what": "uptime",
+    "note": "~100%"
+   },
+   {
+    "id": 51730,
+    "name": "Earthliving Weapon",
+    "what": "uptime enchant",
+    "note": "verifie au precombat (Hekili .simc L2)"
+   },
+   {
+    "id": 61295,
+    "name": "Riptide",
+    "what": "uptime multi-cibles"
+   }
+  ],
+  "resources": "mana (Mana Tide <70%, Water Shield uptime)",
+  "exec_rules": [
+   "Earth Shield toujours actif sur le tank (Hekili ShamanRestoration.simc L16) - uptime ~100%",
+   "Riptide quasi a CD (6s) pour generer Tidal Waves et etaler le HoT (.simc L17) - casts Riptide / possibles",
+   "Healing Wave/GHW casts sous Tidal Waves : TW genere par Riptide/Chain Heal, 2 charges - % de HW/GHW sans TW = inefficience",
+   "Healing Stream Totem a CD (30s) en quasi permanence (.simc L18); Healing Rain maintenue sur le pack en degats AoE (.simc L19)",
+   "CDs raid par paliers : Chain Heal <80%, HW <70%, GHW <60%, Surge <40%, HTT/Ascendance <25% (.simc L22-27) - ratio HTT/SLT utilises vs possibles sur les phases de burst",
+   "Mana Tide <70% mana (.simc L29) - un combat fini avec MTT jamais pose et le shaman oom = erreur"
+  ],
+  "sources": [
+   "Hekili Priorities/ShamanRestoration.simc",
+   "Hekili MistsOfPandaria/ShamanRestoration.lua",
+   "wowsims sim/shaman/*.go (ascendance, unleash_elements, spiritwalkers_grace)",
+   "simc sc_spell_data.inc (Healing Wave 331)"
+  ]
+ },
+ "Priest-Discipline": {
+  "role": "heal",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 17,
+    "name": "Power Word: Shield"
+   },
+   {
+    "id": 47540,
+    "name": "Penance",
+    "note": "heal ou offensif (Atonement)"
+   },
+   {
+    "id": 596,
+    "name": "Prayer of Healing"
+   },
+   {
+    "id": 2060,
+    "name": "Greater Heal"
+   },
+   {
+    "id": 2050,
+    "name": "Heal"
+   },
+   {
+    "id": 2061,
+    "name": "Flash Heal",
+    "note": "urgence <40% (Hekili PriestDiscipline.simc L47)"
+   },
+   {
+    "id": 33076,
+    "name": "Prayer of Mending"
+   },
+   {
+    "id": 139,
+    "name": "Renew"
+   },
+   {
+    "id": 32546,
+    "name": "Binding Heal",
+    "note": "talent"
+   },
+   {
+    "id": 109964,
+    "name": "Spirit Shell"
+   },
+   {
+    "id": 14914,
+    "name": "Holy Fire",
+    "note": "Atonement (id MoP via Hekili lua + simc; le 48135 des fichiers wowsims _* est un reliquat Cata)"
+   },
+   {
+    "id": 585,
+    "name": "Smite",
+    "note": "Atonement"
+   },
+   {
+    "id": 129250,
+    "name": "Power Word: Solace",
+    "note": "talent (id simc; reference Hekili .simc L32)"
+   },
+   {
+    "id": 81700,
+    "name": "Archangel"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 17,
+    "name": "Power Word: Shield (absorb)",
+    "target": "friendly",
+    "note": "roll quasi permanent; Weakened Soul 6788 = proxy du rythme"
+   },
+   {
+    "id": 33076,
+    "name": "Prayer of Mending",
+    "target": "friendly",
+    "note": "relance des que tombe (Hekili .simc L43)"
+   },
+   {
+    "id": 139,
+    "name": "Renew",
+    "target": "friendly",
+    "note": "remplissage <90%"
+   },
+   {
+    "id": 114908,
+    "name": "Spirit Shell (absorb)",
+    "target": "friendly",
+    "note": "absorb pose pendant la fenetre"
+   },
+   {
+    "id": 47753,
+    "name": "Divine Aegis",
+    "target": "friendly",
+    "note": "absorb passif sur crits"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 109964,
+    "name": "Spirit Shell",
+    "cd_s": 60,
+    "kind": "raid-absorb",
+    "note": "fenetre 10s ou PoH/GH deviennent des absorbs (wowsims discipline_absorbs.go L42-43)"
+   },
+   {
+    "id": 62618,
+    "name": "Power Word: Barrier",
+    "cd_s": 180,
+    "kind": "raid"
+   },
+   {
+    "id": 64843,
+    "name": "Divine Hymn",
+    "cd_s": 180,
+    "kind": "raid",
+    "note": "CD 3 min (wowsims divine_hymn.go time.Minute*3)"
+   },
+   {
+    "id": 81700,
+    "name": "Archangel",
+    "cd_s": 60,
+    "kind": "throughput",
+    "note": "consomme 5 stacks Evangelism (+heal%); talent en MoP Classic (Hekili PriestDiscipline.lua L259)"
+   },
+   {
+    "id": 34433,
+    "name": "Shadowfiend",
+    "cd_s": 180,
+    "kind": "mana"
+   },
+   {
+    "id": 123040,
+    "name": "Mindbender",
+    "cd_s": 60,
+    "kind": "mana",
+    "note": "talent (wowsims mindbender.go)"
+   },
+   {
+    "id": 10060,
+    "name": "Power Infusion",
+    "cd_s": 120,
+    "kind": "throughput",
+    "note": "talent"
+   },
+   {
+    "id": 64901,
+    "name": "Hymn of Hope",
+    "cd_s": 360,
+    "kind": "mana",
+    "note": "CD simc sc_spell_data (360000ms)"
+   }
+  ],
+  "cds_defensive": [
+   {
+    "id": 33206,
+    "name": "Pain Suppression",
+    "cd_s": 180,
+    "note": "external tank - burst >70% HP en 5s (Hekili .simc L17)"
+   },
+   {
+    "id": 19236,
+    "name": "Desperate Prayer",
+    "cd_s": 90,
+    "note": "talent; self <30%"
+   },
+   {
+    "id": 586,
+    "name": "Fade",
+    "cd_s": 30
+   },
+   {
+    "id": 112833,
+    "name": "Spectral Guise",
+    "cd_s": null,
+    "note": "talent; CD non capture dans les sources locales"
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 59889,
+    "name": "Borrowed Time",
+    "what": "usage",
+    "note": "haste apres chaque PWS - proxy du rythme de shielding (Hekili PriestDiscipline.lua)"
+   },
+   {
+    "id": 81661,
+    "name": "Evangelism",
+    "what": "stacks",
+    "note": "monte a 5 via Smite/Holy Fire/Penance, consomme par Archangel - Archangel casts a <5 stacks = perte"
+   },
+   {
+    "id": 6788,
+    "name": "Weakened Soul",
+    "what": "debuff rythme PWS",
+    "note": "re-shield la meme cible avant expiration = impossible; Rapture ICD ~12s (Hekili lua L121) - PWS trop frequents = mana brulee sans Rapture"
+   },
+   {
+    "id": 109964,
+    "name": "Spirit Shell (fenetre)",
+    "what": "fenetres exploitees",
+    "note": "PoH/GH spammes pendant les 10s (wowsims disc_rotation.go)"
+   },
+   {
+    "id": 114255,
+    "name": "Surge of Light",
+    "what": "consommation",
+    "note": "talent From Darkness Comes Light - Flash Heal gratuit (wowsims talents_holy.go L183; reference Hekili .simc L34/L47)"
+   }
+  ],
+  "resources": "mana (Shadowfiend/Mindbender <80%, Hekili PriestDiscipline.simc L23-24; Rapture via PWS absorbe)",
+  "exec_rules": [
+   "Spirit Shell a CD (60s) et la fenetre de 10s remplie de Prayer of Healing / Greater Heal convertis en absorbs (Hekili PriestDiscipline.simc L29/L41 + wowsims disc_rotation.go) - fenetres vides = CD gaspille",
+   "Archangel seulement a 5 stacks d'Evangelism (.simc L30/L42) - stacks entretenus par la rotation Atonement (Holy Fire > Solace > Penance > Smite, .simc L31-38)",
+   "Power Word: Shield roule sans casser le rythme Rapture (Weakened Soul 6788; ICD Rapture ~12s, Hekili lua L121) - compter les PWS poses pendant Weakened Soul actif d'un autre PWS recent",
+   "Prayer of Mending relancee des qu'elle tombe (.simc L43)",
+   "Pain Suppression sur burst tank (>70% HP en 5s, .simc L17) et PW:Barrier sur burst raid - CD externe dispo non utilise avant une mort = drapeau",
+   "Shadowfiend/Mindbender des <80% mana (.simc L23-24) et Hymn of Hope en deficit profond - un priest oom avec ces CDs en stock = erreur"
+  ],
+  "sources": [
+   "Hekili Priorities/PriestDiscipline.simc",
+   "Hekili MistsOfPandaria/PriestDiscipline.lua",
+   "wowsims sim/priest/*.go (penance, power_word_shield, discipline_absorbs, divine_hymn, mindbender)",
+   "wowsims sim/priest/discipline/disc_rotation.go",
+   "simc sc_spell_data.inc (Holy Fire 14914, PW:Solace 129250, Hymn of Hope 360s)"
+  ]
+ },
+ "_unresolved": {
+  "note": "IDs ou CDs non sourcables dans Hekili/wowsims/trees/simc locaux",
+  "items": [
+   {
+    "spec": "Shaman-Restoration",
+    "name": "Ascendance forme Eau (resto)",
+    "issue": "seul 114049 (cast generique, wowsims+simc) est sourcable; 114052 absent des sources locales - verifier l'id reellement loggue sur le premier combat"
+   },
+   {
+    "spec": "DeathKnight-Blood",
+    "name": "Conversion",
+    "issue": "talent toggle, CD non capture localement"
+   },
+   {
+    "spec": "Priest-Discipline",
+    "name": "Spectral Guise",
+    "issue": "CD non capture localement"
+   },
+   {
+    "spec": "Druid-Guardian",
+    "name": "Tooth and Claw debuff",
+    "issue": "wowsims=135597 vs Hekili=135601 - divergent, wowsims retenu (implemente+teste); confirmer en log"
+   },
+   {
+    "spec": "Priest-Shadow",
+    "name": "Vampiric Embrace CD",
+    "issue": "simc=180s retenu vs Hekili lua=60s - divergent"
+   },
+   {
+    "spec": "Mage-Frost",
+    "name": "Fingers of Frost / Brain Freeze",
+    "issue": "double id aura/passif (44544+112965 / 57761+44549) - matcher les DEUX cotes events buff"
+   }
+  ]
+ }
+}
