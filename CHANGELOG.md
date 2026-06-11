@@ -3,38 +3,21 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
-## [Unreleased]
-
-### Changed
-- Verdicts-gate hardening after two live Opus gate runs on the three
-  historical trap candidates (both runs reached the correct verdicts;
-  weaknesses found in the path, not the outcome): reactive-mechanic proof
-  now prescribes timestamp correlation explicitly (a debuff's source_id is
-  usually the BOSS even for victim-triggered applications — one run
-  concluded "not reactive" from source attribution alone), check-4
-  fallback documented (top deep_dmg_taken ticks are always available for
-  received-DoT behavior; top dispels/heal events are not extracted), and
-  the literal `- VERDICT:` line is now mandatory (machine-greppable).
-
-### Added
-- Seamless quota management in the WCL client (`wcl.py`): `rateLimitData`
-  polled every ~150 live calls, auto-pause through the hourly reset above
-  85% (`WCL_QUOTA_SOFT_PCT` / `WCL_QUOTA_CHECK_EVERY` env overrides), and
-  429 now sleeps until `pointsResetIn` instead of giving up after ~15s of
-  backoff — which used to yield silently-partial extractions. Failed
-  requests now print a loud `[wcl] WARNING` (they are never cached, so
-  re-running the command retries them for free).
-
-### Fixed
-- `pages.py` `encounters()`: aggregate misuse (ORDER BY MIN without
-  GROUP BY) crashed page generation.
-
 ## [1.0.0] — 2026-06-12
 
 Initial public release. Extracted from a battle-tested private pipeline
-(real 10-player Siege of Orgrimmar progression nights).
+(real 10-player Siege of Orgrimmar progression nights), then validated by
+a full end-to-end replay (regression diff vs the proven pipeline: 21/21
+identical) and two live Opus verdict-gate runs (3/3 correct verdicts each,
+with and without the bundled zone traps).
 
 ### Added
+- Seamless quota management in the WCL client: `rateLimitData` polled every
+  ~150 live calls, auto-pause through the hourly reset above 85%
+  (`WCL_QUOTA_SOFT_PCT` / `WCL_QUOTA_CHECK_EVERY` env overrides), 429 sleeps
+  until `pointsResetIn` instead of giving up after ~15s of backoff (which
+  yields silently-partial extractions); uncached failures print a loud
+  `[wcl] WARNING` and are retried free on re-run.
 - Stdlib-only python pipeline: `ingest.py` (cached WCL extraction: session
   aggregates, raw events per pull, trash, top1/top2 parse details),
   `analyze.py` (10 modules), `localize.py`, `pages.py` (static site, fr/en),
