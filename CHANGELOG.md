@@ -3,7 +3,36 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
-## [1.0.0] — 2026-06-12
+## [1.1.0] — 2026-06-11
+
+Multi-night raid IDs: one lockout cleared over several nights = ONE
+consolidated debrief. Built and validated on a real 25-player Siege of
+Orgrimmar ID split over two nights (two WCL reports).
+
+### Added
+- `ingest.py init` accepts several `--report` codes (repeatable or
+  comma-separated): chronological order auto-detected, single-zone enforced.
+- `ingest.py add-report`: complete an EXISTING workdir (and an already
+  published debrief) when the lockout continues on a later night — only the
+  new report costs API points (cache + done markers), then re-run
+  `all`/`analyze`/`pages`/`probe` to regenerate.
+- Global pull numbering per encounter, chronological ACROSS nights
+  (`pulls_all`): pull #7 of a boss can be the kill on night 2. Appending a
+  later report never renumbers earlier pulls, so published anchors and
+  content fragments stay valid.
+- Per-night pacing (`pacing.json` -> `{"nights": [...]}`), night badges on
+  pull headers, multi-date hero/footer with one WCL link per night,
+  per-player cards aggregated over the whole ID (qualified deaths and pull
+  counts keyed by (report, fight) — actor ids are PER report, cross-night
+  player identity is the NAME).
+- `status` gate runs every per-report check per night.
+
+### Compatibility
+- Single-report workdirs unchanged: regression-checked vs v1.0.0 on a real
+  night — 20/20 digests identical (modulo additive `report`/`night` keys),
+  23/23 pages probe-clean.
+
+## [1.0.0] — 2026-06-11
 
 Initial public release. Extracted from a battle-tested private pipeline
 (real 10-player Siege of Orgrimmar progression nights), then validated by

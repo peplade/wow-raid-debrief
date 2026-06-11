@@ -83,10 +83,20 @@ Read `references/wcl-api-gotchas.md` NOW (failure modes are silent).
 
 ```bash
 cd <workdir-parent> && mkdir -p <label> && cd <label>
-python3 "$SKILL/scripts/ingest.py" init --report <CODE> --guild <NAME> \
-        --lang <fr|en|...> --size <10|25> [--label id-YYYY-MM-DD]
+python3 "$SKILL/scripts/ingest.py" init --report <CODE> [--report <CODE2>] \
+        --guild <NAME> --lang <fr|en|...> --size <10|25> [--label id-YYYY-MM-DD]
 python3 "$SKILL/scripts/ingest.py" all          # quota-guarded, resumable
 ```
+
+Multi-night raid ID (one lockout over several nights): pass every report code
+to `init` (repeatable `--report`, chronological order is detected, same zone
+enforced) — ONE consolidated debrief. If the lockout CONTINUES after a
+debrief was produced, do NOT re-init: `ingest.py add-report --report <CODE2>`
+in the existing workdir, then re-run `all` (only the new report costs
+points), `analyze.py all`, pages and probe. Global pull numbers are
+chronological per encounter, so earlier nights keep their numbers — existing
+verdicts.md anchors and content fragments stay valid; only ADD content for
+the new pulls and update syntheses that the new night changes.
 
 GATE: `python3 "$SKILL/scripts/ingest.py" status` prints `STATUS: OK`
 (exit 0). On FAIL lines: re-run the failed stage (free thanks to the cache),

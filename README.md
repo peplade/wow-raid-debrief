@@ -88,6 +88,14 @@ In Claude Code, give it a report code and answer the framing questions:
 
 > Generate the raid debrief for report `AbCdEf123`, guild MyGuild, in French.
 
+**Multi-night raid IDs** are first-class: pass several report codes (one
+lockout cleared over 2+ nights) and you get ONE consolidated debrief — global
+pull numbering per boss across nights, per-night pacing, per-player cards
+aggregated over the whole ID. If the lockout continues after you already
+produced the debrief, `ingest.py add-report` completes the existing workdir:
+only the new report costs API points, earlier pull numbers never shift, and
+the written content stays valid.
+
 The skill will extract (~5 min, quota-aware), analyze, investigate, write,
 generate and probe the pages into a local workdir:
 
