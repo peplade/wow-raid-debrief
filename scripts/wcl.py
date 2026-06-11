@@ -95,7 +95,10 @@ class Backend:
         self.con.execute("PRAGMA journal_mode=WAL")
         # WAL = single writer: concurrent workers (sharded top-detail,
         # progress samplers) must WAIT, not crash with 'database is locked'.
-        self.con.execute("PRAGMA busy_timeout=30000")
+        # 120s: a worker's per-parse implicit transaction can hold the write
+        # lock for tens of seconds while upserting 20-30k event rows
+        # (25-player enemy-debuff streams) — 30s was measured insufficient.
+        self.con.execute("PRAGMA busy_timeout=120000")
         with open(SCHEMA, encoding="utf-8") as f:
             self.con.executescript(f.read())
 
