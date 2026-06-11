@@ -21,6 +21,11 @@ Core rules baked in (do not "simplify" them away):
   * healer HoT uptime = tracked by SOURCE, union of intervals (>=1 target up).
   * exec_row() is the ONE formula set used for our players AND top parses.
   * top parses with cpm==0 are excluded (actor mis-resolution guard).
+  * multi-report (one ID over several nights): pull numbers are GLOBAL per
+    (encounter, difficulty), chronological across nights (pulls_all). Adding
+    a LATER report never renumbers earlier pulls. actor_id is PER REPORT —
+    cross-night player identity is the player NAME; digests carry
+    report/night on every row.
 """
 import argparse
 import json
@@ -29,8 +34,8 @@ import sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from wcl import (Backend, fmt_dur, gql, load_config, load_env, unwrap,
-                 workdir_from_args)
+from wcl import (Backend, fmt_dur, gql, load_config, load_env, report_codes,
+                 unwrap, workdir_from_args)
 from ingest import RAID_CDS
 
 
@@ -68,6 +73,41 @@ def pulls(be, code):
         "SELECT * FROM pull WHERE report=? ORDER BY start_time", (code,))]
 
 
+def pulls_all(be, cfg):
+    """Every boss pull of the raid ID, chronological ACROSS nights.
+    pull.start_time is relative to its report start -> absolute order needs
+    raid_session.start_ts. Adds per pull: night (1-based), abs_ms, and
+    gpull = global pull number per (encounter, difficulty) — THE displayed
+    number. Chronological numbering => appending a later report never
+    renumbers earlier pulls (published anchors stay valid)."""
+    out = []
+    for night, code in enumerate(report_codes(cfg), 1):
+        s = be.con.execute("SELECT start_ts FROM raid_session WHERE report=?",
+                           (code,)).fetchone()
+        t0 = s["start_ts"] if s and s["start_ts"] else 0
+        for p in pulls(be, code):
+            p["night"] = night
+            p["abs_ms"] = t0 + (p["start_time"] or 0)
+            out.append(p)
+    out.sort(key=lambda p: p["abs_ms"])
+    cnt = {}
+    for p in out:
+        # Per ENCOUNTER (all difficulties), same semantics as the per-report
+        # pull_number from ingest — identical numbers on single-report runs.
+        k = p["encounter_id"]
+        cnt[k] = cnt.get(k, 0) + 1
+        p["gpull"] = cnt[k]
+    return out
+
+
+def phase_names_all(be, cfg):
+    out = {}
+    for code in report_codes(cfg):
+        for enc, m in phase_names_map(be, code).items():
+            out.setdefault(enc, {}).update(m)
+    return out
+
+
 def diff_letter(d):
     return "H" if d == 4 else "N"
 
@@ -100,43 +140,50 @@ def J_out(be, name, obj):
 # ---------------------------------------------------------------------- pacing
 
 def cmd_pacing(be, cfg, args):
-    code = cfg["report"]
-    sess = be.con.execute("SELECT * FROM raid_session WHERE report=?",
-                          (code,)).fetchone()
-    segs = []
-    for p in pulls(be, code):
-        segs.append({"kind": "boss", "name": p["boss"],
-                     "diff": diff_letter(p["difficulty"]),
-                     "kill": p["kill"], "fight_id": p["fight_id"],
-                     "s": p["start_time"] / 1000.0, "e": p["end_time"] / 1000.0})
-    for r in be.con.execute("SELECT * FROM trash_fight WHERE report=?", (code,)):
-        segs.append({"kind": "trash", "name": r["name"], "deaths": r["deaths"],
-                     "fight_id": r["fight_id"],
-                     "s": r["start_time"] / 1000.0, "e": r["end_time"] / 1000.0})
-    segs.sort(key=lambda x: x["s"])
-    full, prev_e = [], 0.0
-    for s in segs:
-        if s["s"] - prev_e > 1.0 and prev_e > 0:
-            full.append({"kind": "idle", "s": prev_e, "e": s["s"]})
-        full.append(s)
-        prev_e = max(prev_e, s["e"])
-    tot = {"boss": 0.0, "trash": 0.0, "idle": 0.0}
-    for s in full:
-        tot[s["kind"]] += s["e"] - s["s"]
-    out = {"report": code, "t0_ms": sess["start_ts"] if sess else None,
-           "segments": full, "totals_s": tot}
+    """Pacing PER NIGHT (idle between nights is meaningless). pacing.json =
+    {"nights": [{night, report, t0_ms, segments, totals_s}], "totals_s": sum}."""
+    nights, merged = [], {"boss": 0.0, "trash": 0.0, "idle": 0.0}
+    for night, code in enumerate(report_codes(cfg), 1):
+        sess = be.con.execute("SELECT * FROM raid_session WHERE report=?",
+                              (code,)).fetchone()
+        segs = []
+        for p in pulls(be, code):
+            segs.append({"kind": "boss", "name": p["boss"],
+                         "diff": diff_letter(p["difficulty"]),
+                         "kill": p["kill"], "fight_id": p["fight_id"],
+                         "s": p["start_time"] / 1000.0, "e": p["end_time"] / 1000.0})
+        for r in be.con.execute("SELECT * FROM trash_fight WHERE report=?", (code,)):
+            segs.append({"kind": "trash", "name": r["name"], "deaths": r["deaths"],
+                         "fight_id": r["fight_id"],
+                         "s": r["start_time"] / 1000.0, "e": r["end_time"] / 1000.0})
+        segs.sort(key=lambda x: x["s"])
+        full, prev_e = [], 0.0
+        for s in segs:
+            if s["s"] - prev_e > 1.0 and prev_e > 0:
+                full.append({"kind": "idle", "s": prev_e, "e": s["s"]})
+            full.append(s)
+            prev_e = max(prev_e, s["e"])
+        tot = {"boss": 0.0, "trash": 0.0, "idle": 0.0}
+        for s in full:
+            tot[s["kind"]] += s["e"] - s["s"]
+        for k in merged:
+            merged[k] += tot[k]
+        nights.append({"night": night, "report": code,
+                       "t0_ms": sess["start_ts"] if sess else None,
+                       "segments": full, "totals_s": tot})
+        dur = ((sess["end_ts"] - sess["start_ts"]) / 1000.0) if sess else 0
+        print(f"night {night} ({code}) {fmt_dur(dur)} — boss {fmt_dur(tot['boss'])} | "
+              f"trash {fmt_dur(tot['trash'])} | out-of-combat {fmt_dur(tot['idle'])}")
+        idles = sorted((s for s in full if s["kind"] == "idle"),
+                       key=lambda x: x["e"] - x["s"], reverse=True)[:10]
+        for i in idles:
+            pi = [s for s in full if s["e"] <= i["s"] and s["kind"] != "idle"]
+            ni = [s for s in full if s["s"] >= i["e"] and s["kind"] != "idle"]
+            a = pi[-1]["name"] if pi else "start"
+            b = ni[0]["name"] if ni else "end"
+            print(f"  idle {fmt_dur(i['e']-i['s'])}  after \"{a}\" before \"{b}\"")
+    out = {"nights": nights, "totals_s": merged}
     p = J_out(be, "pacing.json", out)
-    dur = ((sess["end_ts"] - sess["start_ts"]) / 1000.0) if sess else 0
-    print(f"night {fmt_dur(dur)} — boss {fmt_dur(tot['boss'])} | "
-          f"trash {fmt_dur(tot['trash'])} | out-of-combat {fmt_dur(tot['idle'])}")
-    idles = sorted((s for s in full if s["kind"] == "idle"),
-                   key=lambda x: x["e"] - x["s"], reverse=True)[:10]
-    for i in idles:
-        pi = [s for s in full if s["e"] <= i["s"] and s["kind"] != "idle"]
-        ni = [s for s in full if s["s"] >= i["e"] and s["kind"] != "idle"]
-        a = pi[-1]["name"] if pi else "start"
-        b = ni[0]["name"] if ni else "end"
-        print(f"  idle {fmt_dur(i['e']-i['s'])}  after \"{a}\" before \"{b}\"")
     print(f"-> {p}")
 
 
@@ -147,56 +194,58 @@ def _parse_buffs(s):
 
 
 def cmd_deaths(be, cfg, args):
-    code = cfg["report"]
-    Pf = {}
+    Pf, An = {}, {}
 
-    def P_at(fid):
-        if fid not in Pf:
-            Pf[fid] = players(be, code, fid)
-        return Pf[fid]
-    A = actor_names(be, code)
-    pnames = phase_names_map(be, code)
-    pls = {p["fight_id"]: p for p in pulls(be, code)}
+    def P_at(code, fid):
+        if (code, fid) not in Pf:
+            Pf[(code, fid)] = players(be, code, fid)
+        return Pf[(code, fid)]
+
+    def A_of(code):
+        if code not in An:
+            An[code] = actor_names(be, code)
+        return An[code]
+    pnames = phase_names_all(be, cfg)
     out = []
-    q = "SELECT * FROM deep_death_recap WHERE report=?"
-    qa = [code]
-    if args.fight:
-        q += " AND fight_id=?"
-        qa.append(args.fight)
-    for r in be.con.execute(q + " ORDER BY fight_id, death_seq", qa):
-        d = json.loads(r["payload"])
-        fid = r["fight_id"]
-        p = pls.get(fid) or {}
-        t_rel = r["ts_rel"] / 1000.0
-        phs = pull_phases(be, code, fid, p.get("encounter_id"), pnames)
-        cur_phase = None
-        for ph in phs:
-            if ph["t"] <= t_rel:
-                cur_phase = ph["phase"]
-        kb = d.get("killingBlow") or {}
-        dmg = d.get("damage") or {}
-        win_abs = [{"name": ab.get("name"), "total": ab.get("total"),
-                    "hits": ab.get("totalUses") or ab.get("hitCount")}
-                   for ab in (dmg.get("abilities") or [])[:6]]
-        heal = d.get("healing") or {}
-        last_hit = be.con.execute(
-            "SELECT buffs FROM deep_dmg_taken "
-            "WHERE report=? AND fight_id=? AND target_id=? AND ts_rel<=? "
-            "ORDER BY ts_rel DESC LIMIT 1",
-            (code, fid, r["actor_id"], r["ts_rel"] + 50)).fetchone()
-        out.append({
-            "fight_id": fid, "boss": p.get("boss"), "pull": p.get("pull_number"),
-            "diff": diff_letter(p.get("difficulty")),
-            "seq": r["death_seq"], "t": t_rel, "phase": cur_phase,
-            "player": (P_at(fid).get(r["actor_id"]) or {}).get("player_name")
-                      or A.get(r["actor_id"]),
-            "role": (P_at(fid).get(r["actor_id"]) or {}).get("role"),
-            "killing_blow": kb.get("name"), "kb_id": kb.get("guid"),
-            "overkill": d.get("overkill"),
-            "window_damage": win_abs,
-            "window_heal_total": heal.get("total"),
-            "buffs_at_death": _parse_buffs(last_hit["buffs"]) if last_hit else [],
-        })
+    for p in pulls_all(be, cfg):
+        if args.fight and p["fight_id"] != args.fight:
+            continue
+        code, fid = p["report"], p["fight_id"]
+        for r in be.con.execute(
+                "SELECT * FROM deep_death_recap WHERE report=? AND fight_id=? "
+                "ORDER BY death_seq", (code, fid)):
+            d = json.loads(r["payload"])
+            t_rel = r["ts_rel"] / 1000.0
+            phs = pull_phases(be, code, fid, p.get("encounter_id"), pnames)
+            cur_phase = None
+            for ph in phs:
+                if ph["t"] <= t_rel:
+                    cur_phase = ph["phase"]
+            kb = d.get("killingBlow") or {}
+            dmg = d.get("damage") or {}
+            win_abs = [{"name": ab.get("name"), "total": ab.get("total"),
+                        "hits": ab.get("totalUses") or ab.get("hitCount")}
+                       for ab in (dmg.get("abilities") or [])[:6]]
+            heal = d.get("healing") or {}
+            last_hit = be.con.execute(
+                "SELECT buffs FROM deep_dmg_taken "
+                "WHERE report=? AND fight_id=? AND target_id=? AND ts_rel<=? "
+                "ORDER BY ts_rel DESC LIMIT 1",
+                (code, fid, r["actor_id"], r["ts_rel"] + 50)).fetchone()
+            out.append({
+                "report": code, "night": p["night"],
+                "fight_id": fid, "boss": p.get("boss"), "pull": p.get("gpull"),
+                "diff": diff_letter(p.get("difficulty")),
+                "seq": r["death_seq"], "t": t_rel, "phase": cur_phase,
+                "player": (P_at(code, fid).get(r["actor_id"]) or {}).get("player_name")
+                          or A_of(code).get(r["actor_id"]),
+                "role": (P_at(code, fid).get(r["actor_id"]) or {}).get("role"),
+                "killing_blow": kb.get("name"), "kb_id": kb.get("guid"),
+                "overkill": d.get("overkill"),
+                "window_damage": win_abs,
+                "window_heal_total": heal.get("total"),
+                "buffs_at_death": _parse_buffs(last_hit["buffs"]) if last_hit else [],
+            })
     p = J_out(be, "deaths.json", out)
     for d in out:
         wd = ", ".join(f"{w['name']} {w['total']:,}" for w in d["window_damage"][:3]
@@ -212,21 +261,19 @@ def cmd_deaths(be, cfg, args):
 
 def cmd_cdmap(be, cfg, args):
     """Raid CDs vs Total DTPS curve: covered peaks / NAKED peaks / off-peak CDs."""
-    code = cfg["report"]
-    P = players(be, code)
+    Pn = {code: players(be, code) for code in report_codes(cfg)}
     out = []
-    q = "SELECT fight_id FROM deep_graph WHERE report=? AND kind='dtps'"
-    qa = [code]
-    if args.fight:
-        q += " AND fight_id=?"
-        qa.append(args.fight)
-    pls = {p["fight_id"]: p for p in pulls(be, code)}
-    for row in be.con.execute(q + " ORDER BY fight_id", qa):
-        fid = row["fight_id"]
-        p = pls.get(fid) or {}
-        series = json.loads(be.con.execute(
+    for p in pulls_all(be, cfg):
+        if args.fight and p["fight_id"] != args.fight:
+            continue
+        code, fid = p["report"], p["fight_id"]
+        P = Pn[code]
+        row = be.con.execute(
             "SELECT payload FROM deep_graph WHERE report=? AND fight_id=? AND kind='dtps'",
-            (code, fid)).fetchone()["payload"])
+            (code, fid)).fetchone()
+        if not row:
+            continue
+        series = json.loads(row["payload"])
         tot = next((s for s in series if s.get("name") == "Total"), None)
         if not tot:
             continue
@@ -254,7 +301,8 @@ def cmd_cdmap(be, cfg, args):
         for pk in peaks:
             pk["covered_by"] = [c["name"] + " (" + (c["by"] or "?") + ")"
                                 for c in cd_list if pk["t"] - 8 <= c["t"] <= pk["t"] + 5]
-        out.append({"fight_id": fid, "boss": p.get("boss"), "pull": p.get("pull_number"),
+        out.append({"report": code, "night": p["night"],
+                    "fight_id": fid, "boss": p.get("boss"), "pull": p.get("gpull"),
                     "diff": diff_letter(p.get("difficulty")),
                     "duration_s": dur, "p75_5s": p75,
                     "peaks": peaks, "cds": cd_list})
@@ -271,13 +319,12 @@ def cmd_cdmap(be, cfg, args):
 # ---------------------------------------------------------------------- phases
 
 def cmd_phases(be, cfg, args):
-    code = cfg["report"]
-    pnames = phase_names_map(be, code)
-    for p in pulls(be, code):
-        phs = pull_phases(be, code, p["fight_id"], p["encounter_id"], pnames)
+    pnames = phase_names_all(be, cfg)
+    for p in pulls_all(be, cfg):
+        phs = pull_phases(be, p["report"], p["fight_id"], p["encounter_id"], pnames)
         if phs:
             s = " -> ".join(f"{x['phase']}@{fmt_dur(x['t'])}" for x in phs)
-            print(f"{p['boss']} #{p['pull_number']}{diff_letter(p['difficulty'])}: {s}")
+            print(f"{p['boss']} #{p['gpull']}{diff_letter(p['difficulty'])}: {s}")
 
 
 # ----------------------------------------------------------------------- heals
@@ -292,17 +339,17 @@ def _mana_series(be, code, fid, aid):
 
 
 def cmd_heals(be, cfg, args):
-    code = cfg["report"]
-    pls = pulls(be, code)
+    pls = pulls_all(be, cfg)
     if args.fight:
         pls = [p for p in pls if p["fight_id"] == args.fight]
     out = []
     for p in pls:
-        fid, dur = p["fight_id"], p["duration_s"]
+        code, fid, dur = p["report"], p["fight_id"], p["duration_s"]
         P = players(be, code, fid)
         healers = {a: q for a, q in P.items() if q["role"] == "healer"}
         for aid, hp in healers.items():
-            row = {"fight_id": fid, "boss": p["boss"], "pull": p["pull_number"],
+            row = {"report": code, "night": p["night"],
+                   "fight_id": fid, "boss": p["boss"], "pull": p["gpull"],
                    "diff": diff_letter(p["difficulty"]),
                    "player": hp["player_name"], "spec": hp["spec"]}
             t = be.con.execute(
@@ -359,9 +406,6 @@ def cmd_dispels(be, cfg, args):
     CAUTION (engraved trap): a slow dispel can BE the strategy (windowed buff
     making it free, hidden cost). Correlate before blaming — see
     references/interpretation-traps.md checklist."""
-    code = cfg["report"]
-    P = players(be, code)
-    A = actor_names(be, code)
     ref_p = os.path.join(be.workdir, "refs", "mechanics_ref.json")
     dispellable = {}
     if os.path.exists(ref_p):
@@ -370,9 +414,12 @@ def cmd_dispels(be, cfg, args):
             for x in d.get("dispellables") or []:
                 if x.get("id"):
                     dispellable[int(x["id"])] = x.get("name")
+    Pn = {c: players(be, c) for c in report_codes(cfg)}
+    An = {c: actor_names(be, c) for c in report_codes(cfg)}
     out = []
-    for p in pulls(be, code):
-        fid = p["fight_id"]
+    for p in pulls_all(be, cfg):
+        code, fid = p["report"], p["fight_id"]
+        P, A = Pn[code], An[code]
         disp = [dict(r) for r in be.con.execute(
             "SELECT * FROM deep_aura WHERE report=? AND fight_id=? AND kind='dispel' "
             "ORDER BY ts_rel", (code, fid))]
@@ -386,7 +433,8 @@ def cmd_dispels(be, cfg, args):
                     and a["target_id"] == d["target_id"]
                     and a["ts_rel"] <= d["ts_rel"]]
             delay = (d["ts_rel"] - cand[-1]["ts_rel"]) / 1000.0 if cand else None
-            out.append({"fight_id": fid, "boss": p["boss"], "pull": p["pull_number"],
+            out.append({"report": code, "night": p["night"],
+                        "fight_id": fid, "boss": p["boss"], "pull": p["gpull"],
                         "t": d["ts_rel"] / 1000.0,
                         "by": (P.get(d["source_id"]) or {}).get("player_name"),
                         "on": (P.get(d["target_id"]) or {}).get("player_name")
@@ -408,15 +456,14 @@ def cmd_dispels(be, cfg, args):
 
 def cmd_avoidable(be, cfg, args):
     """Player x mechanic heatmap data from deep_dmg_taken x zone mechanics ref."""
-    code = cfg["report"]
     ref_p = os.path.join(be.workdir, "refs", "mechanics_ref.json")
     if not os.path.exists(ref_p):
         sys.exit(f"missing {ref_p} — run the zone bootstrap first "
                  "(references/zone-bootstrap.md)")
     ref = json.load(open(ref_p, encoding="utf-8"))
     out = []
-    for p in pulls(be, code):
-        fid = p["fight_id"]
+    for p in pulls_all(be, cfg):
+        code, fid = p["report"], p["fight_id"]
         P = players(be, code, fid)
         enc = ref.get(str(p["encounter_id"])) or {}
         mechs = enc.get("mechanics") or {}
@@ -431,7 +478,8 @@ def cmd_avoidable(be, cfg, args):
             pl = P.get(r["target_id"])
             if not pl:
                 continue
-            out.append({"fight_id": fid, "boss": p["boss"], "pull": p["pull_number"],
+            out.append({"report": code, "night": p["night"],
+                        "fight_id": fid, "boss": p["boss"], "pull": p["gpull"],
                         "diff": diff_letter(p["difficulty"]),
                         "player": pl["player_name"], "role": pl["role"],
                         "ability_id": r["ability_id"], "ability": m.get("name"),
@@ -591,21 +639,21 @@ def exec_row(be, code, fid, dur_ms, aid, sk):
 
 
 def cmd_execution(be, cfg, args):
-    code = cfg["report"]
     K = _spec_kpis(be)
     if not K:
         sys.exit("missing refs/spec_kpis.json — run the zone/spec bootstrap first")
     out = []
-    pls = pulls(be, code)
+    pls = pulls_all(be, cfg)
     if args.fight:
         pls = [p for p in pls if p["fight_id"] == args.fight]
     for p in pls:
-        fid, dur_ms = p["fight_id"], int(p["duration_s"] * 1000)
+        code, fid, dur_ms = p["report"], p["fight_id"], int(p["duration_s"] * 1000)
         for aid, pl in players(be, code, fid).items():
             sk = K.get(f"{pl['class']}-{pl['spec']}")
             if not sk:
                 continue
-            row = {"fight_id": fid, "boss": p["boss"], "pull": p["pull_number"],
+            row = {"report": code, "night": p["night"],
+                   "fight_id": fid, "boss": p["boss"], "pull": p["gpull"],
                    "diff": diff_letter(p["difficulty"]),
                    "player": pl["player_name"], "spec": pl["spec"], "role": pl["role"]}
             row.update(exec_row(be, code, fid, dur_ms, aid, sk))
@@ -624,13 +672,12 @@ def cmd_bench(be, cfg, args):
     amount/s + kill duration (structural factor shown separately, never mixed).
     CAUTION (engraved): only compare players under EQUAL conditions — kills,
     both alive, no asymmetric assignment/eviction phase. See traps checklist."""
-    code = cfg["report"]
     K = _spec_kpis(be)
     if not K:
         sys.exit("missing refs/spec_kpis.json")
     out = []
-    for p in [x for x in pulls(be, code) if x["kill"]]:
-        fid, dur_ms = p["fight_id"], int(p["duration_s"] * 1000)
+    for p in [x for x in pulls_all(be, cfg) if x["kill"]]:
+        code, fid, dur_ms = p["report"], p["fight_id"], int(p["duration_s"] * 1000)
         for aid, pl in players(be, code, fid).items():
             sk = K.get(f"{pl['class']}-{pl['spec']}")
             if not sk:
@@ -663,7 +710,8 @@ def cmd_bench(be, cfg, args):
                              "duration_s": tp["duration_s"],
                              "amount_ps": round(tp["amount"] or 0)})
                 tops.append(trow)
-            out.append({"boss": p["boss"], "diff": diff_letter(p["difficulty"]),
+            out.append({"report": code, "night": p["night"],
+                        "boss": p["boss"], "diff": diff_letter(p["difficulty"]),
                         "fight_id": fid, "duration_s": p["duration_s"],
                         "player": pl["player_name"], "spec": pl["spec"],
                         "role": pl["role"], "mine": mine, "tops": tops})
@@ -681,17 +729,19 @@ def cmd_bench(be, cfg, args):
 
 # -------------------------------------------------------- boss digest (timeline)
 
-def boss_digest(be, code, enc_id, diff):
-    """Timeline-ready JSON per boss (all pulls): phases, deaths, CDs, per-
-    mechanic 5s damage buckets, for the page generator charts."""
-    pnames = phase_names_map(be, code)
-    A = actor_names(be, code)
+def boss_digest(be, cfg, enc_id, diff):
+    """Timeline-ready JSON per boss (all pulls, ALL nights): phases, deaths,
+    CDs, per-mechanic 5s damage buckets, for the page generator charts."""
+    pnames = phase_names_all(be, cfg)
+    An = {c: actor_names(be, c) for c in report_codes(cfg)}
     out = {"encounter_id": enc_id, "pulls": []}
-    for p in [x for x in pulls(be, code)
+    for p in [x for x in pulls_all(be, cfg)
               if x["encounter_id"] == enc_id and x["difficulty"] == diff]:
-        fid, dur = p["fight_id"], p["duration_s"]
+        code, fid, dur = p["report"], p["fight_id"], p["duration_s"]
+        A = An[code]
         P = players(be, code, fid)
-        o = {"fight_id": fid, "pull": p["pull_number"], "kill": p["kill"],
+        o = {"report": code, "night": p["night"],
+             "fight_id": fid, "pull": p["gpull"], "kill": p["kill"],
              "duration_s": dur, "fight_pct": p["fight_pct"],
              "phases": pull_phases(be, code, fid, enc_id, pnames),
              "compo": {v["player_name"]: f"{v['spec']} {v['role']}"
@@ -744,14 +794,20 @@ def boss_digest(be, code, enc_id, diff):
 
 
 def cmd_bossdigest(be, cfg, args):
-    code = cfg["report"]
-    encs = [dict(r) for r in be.con.execute(
-        "SELECT DISTINCT encounter_id, boss, difficulty FROM pull WHERE report=?",
-        (code,))]
+    codes = report_codes(cfg)
+    ph = ",".join("?" for _ in codes)
+    encs, seen = [], set()
+    for r in be.con.execute(
+            f"SELECT DISTINCT encounter_id, boss, difficulty FROM pull "
+            f"WHERE report IN ({ph})", codes):
+        if (r["encounter_id"], r["difficulty"]) in seen:
+            continue
+        seen.add((r["encounter_id"], r["difficulty"]))
+        encs.append(dict(r))
     if args.fight:    # --fight doubles as encounter_id filter here
         encs = [e for e in encs if e["encounter_id"] == args.fight]
     for e in encs:
-        d = boss_digest(be, code, e["encounter_id"], e["difficulty"])
+        d = boss_digest(be, cfg, e["encounter_id"], e["difficulty"])
         d["boss"] = e["boss"]
         d["difficulty"] = e["difficulty"]
         fn = "boss_%d_%s.json" % (e["encounter_id"], diff_letter(e["difficulty"]))

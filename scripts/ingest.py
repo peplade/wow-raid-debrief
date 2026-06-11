@@ -4,8 +4,10 @@
 (wcl_raw cache + done_marker): re-running any command is free and safe.
 
 CLI (run from anywhere; workdir = --workdir / $RAID_WORKDIR / cwd):
-    python3 ingest.py init --report CODE --guild NAME [--label id-YYYY-MM-DD]
-                           [--lang fr] [--size 10]
+    python3 ingest.py init --report CODE [--report CODE2 ...] --guild NAME
+                           [--label id-YYYY-MM-DD] [--lang fr] [--size 10]
+    python3 ingest.py add-report --report CODE2   # complete an EXISTING workdir
+                                         # (lockout finished on a later night)
     python3 ingest.py session            # pulls, compo, totals, deaths, CDs, conso
     python3 ingest.py deep               # raw events per boss pull (the core)
     python3 ingest.py extras             # dispel/interrupt/heal events + enemy casts
@@ -18,9 +20,15 @@ CLI (run from anywhere; workdir = --workdir / $RAID_WORKDIR / cwd):
     python3 ingest.py benchmark [--topn 10]      # zone top logs (avoidable inference)
     python3 ingest.py infer-avoidable    # candidates: tops take ~0, we take >0
 
+Multi-report (one raid ID over several nights): every command loops over
+cfg["reports"] in chronological order. Adding a LATER report never disturbs
+what was already extracted (cache + done markers) nor the global pull
+numbering of earlier nights (chronological), so a published debrief can be
+COMPLETED by `add-report` + re-running all/analyze/pages.
+
 API budget: a 10-player night (~20 boss pulls + 30 trash + tops) costs
-~1000-1500 points out of 3600/hour. `all` checks quota between stages and
-pauses if above 80%.
+~1000-1500 points out of 3600/hour (25-player nights cost more: event volume
+scales with roster size). Quota is self-managed at the client level.
 """
 import argparse
 import json
@@ -31,8 +39,8 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from wcl import (Backend, DIFF_NAME, fetch_events, fetch_graph, fetch_table,
                  fmt_dur, gql, ingest_actors, json_field, load_config, load_env,
-                 quota, rankings_reports, report_meta, save_config, unwrap,
-                 workdir_from_args)
+                 quota, rankings_reports, report_codes, report_meta,
+                 save_config, unwrap, workdir_from_args)
 
 # MoP raid cooldowns tracked (spell_id -> (name, indicative cooldown_s)).
 # Offensive raid CDs included (banners, lust). Extend per expansion if needed.
@@ -91,32 +99,92 @@ def fights_query(be, code, encounters_only=True):
 
 # ------------------------------------------------------------------------ init
 
+def _parse_report_args(report_args):
+    """--report repeatable AND comma-splittable: -r A -r B == -r A,B."""
+    return [c.strip() for r in (report_args or []) for c in r.split(",")
+            if c.strip()]
+
+
+def _validated_codes(be, codes, zone_id=None):
+    """Fetch metas, enforce single zone, return (chronological codes, metas)."""
+    metas = {c: report_meta(be, c) for c in dict.fromkeys(codes)}
+    zones = {c: (metas[c].get("zone") or {}) for c in metas}
+    ids = {z.get("id") for z in zones.values()} | ({zone_id} if zone_id else set())
+    if len(ids) > 1:
+        sys.exit("reports span DIFFERENT zones — one workdir = one raid ID:\n  "
+                 + "\n  ".join(f"{c}: {zones[c].get('name')} (id {zones[c].get('id')})"
+                               for c in metas))
+    ordered = sorted(metas, key=lambda c: metas[c]["startTime"])
+    return ordered, metas
+
+
+def _print_nights(codes, metas):
+    for night, c in enumerate(codes, 1):
+        m = metas[c]
+        d = datetime.fromtimestamp(m["startTime"] / 1000,
+                                   tz=timezone.utc).strftime("%Y-%m-%d")
+        print(f"  night {night}: {c} | {d} | {m.get('title')}")
+
+
 def cmd_init(be, cfg, args):
     if not args.report or not args.guild:
         sys.exit("init requires --report and --guild")
     load_env(be.workdir)
-    rep = report_meta(be, args.report)
-    zone = rep.get("zone") or {}
+    codes, metas = _validated_codes(be, _parse_report_args(args.report))
+    first = metas[codes[0]]
+    zone = first.get("zone") or {}
     label = args.label or "id-" + datetime.fromtimestamp(
-        rep["startTime"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+        first["startTime"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
     cfg = {
-        "report": args.report,
+        "reports": codes,
+        "report": codes[0],            # kept for backward compatibility
         "guild": args.guild,
         "label": label,
         "lang": args.lang,
         "size": args.size,
         "zone_id": zone.get("id"),
         "zone_name": zone.get("name"),
-        "title": rep.get("title"),
+        "title": first.get("title"),
     }
     save_config(be.workdir, cfg)
     for d in ("digests", "digests/analysis", "refs", "content", "pages"):
         os.makedirs(os.path.join(be.workdir, d), exist_ok=True)
     print(f"workdir ready: {be.workdir}")
-    print(f"  report {args.report} | zone {zone.get('name')} (id {zone.get('id')}) "
-          f"| label {label}")
-    print(f"  title: {rep.get('title')}")
+    print(f"  zone {zone.get('name')} (id {zone.get('id')}) | label {label} | "
+          f"{len(codes)} report(s)")
+    _print_nights(codes, metas)
     print("next: python3 ingest.py all   (or step by step: session, deep, ...)")
+
+
+def cmd_add_report(be, cfg, args):
+    """Complete an EXISTING workdir with later report(s) — the lockout
+    continued on another night after the debrief was started (or published).
+    Safe by construction:
+      * extraction is incremental (cache + done markers): re-running `all`
+        only fetches the NEW report(s);
+      * global pull numbers are chronological, so pulls of earlier nights
+        keep their numbers — existing verdicts.md anchors and content
+        fragments (pull_<n>.html) stay valid;
+      * analyze + pages + probe are full regens (free, local).
+    """
+    if not args.report:
+        sys.exit("add-report requires --report")
+    load_env(be.workdir)
+    new = _parse_report_args(args.report)
+    merged, metas = _validated_codes(be, report_codes(cfg) + new,
+                                     zone_id=cfg.get("zone_id"))
+    added = [c for c in merged if c not in report_codes(cfg)]
+    cfg["reports"] = merged
+    cfg["report"] = merged[0]
+    save_config(be.workdir, cfg)
+    print(f"{len(added)} report(s) added; raid ID now spans {len(merged)} night(s):")
+    _print_nights(merged, metas)
+    if added and merged[-1] not in added:
+        print("NOTE: an added report is EARLIER than an existing one — global "
+              "pull numbers of later nights shift; re-check content fragment "
+              "anchors (pull_<n>.html) after regen.")
+    print("next: python3 ingest.py all      # only the new report(s) cost points")
+    print("then: analyze.py all && pages.py && probe.py   # full regen, free")
 
 
 # --------------------------------------------------------------------- session
@@ -124,42 +192,47 @@ def cmd_init(be, cfg, args):
 def cmd_session(be, cfg, args):
     """v1 aggregates: pulls, compo (SPEC PER PULL), totals, deaths, raid CD
     casts, interrupt/dispel aggregates, consumables, damage-taken-by-ability."""
-    code = cfg["report"]
-    rep = report_meta(be, code)
-    be.upsert("raid_session", {
-        "report": code, "guild": cfg["guild"],
-        "zone": (rep.get("zone") or {}).get("name"),
-        "zone_id": (rep.get("zone") or {}).get("id"),
-        "raid_label": cfg["label"], "title": rep.get("title"),
-        "start_ts": rep.get("startTime"), "end_ts": rep.get("endTime"),
-        "ingested_at": datetime.now(timezone.utc).isoformat(),
-    }, ["report"])
-
     avoid = {r["ability_id"] for r in be.con.execute(
         "SELECT ability_id FROM avoidable_ref WHERE status IN ('candidate','validated')")}
-    fights = fights_query(be, code)
-    if not fights:
-        sys.exit("no boss pulls in this report")
-    seen_per_boss = {}
-    for f in sorted(fights, key=lambda x: x["startTime"]):
-        fid, fs, fe = f["id"], f["startTime"], f["endTime"]
-        n = seen_per_boss[f["encounterID"]] = seen_per_boss.get(f["encounterID"], 0) + 1
-        be.upsert("pull", {
-            "report": code, "fight_id": fid, "encounter_id": f["encounterID"],
-            "boss": f.get("name"), "difficulty": f.get("difficulty"),
-            "size": f.get("size"), "kill": 1 if f.get("kill") else 0,
-            "boss_pct": f.get("bossPercentage"), "fight_pct": f.get("fightPercentage"),
-            "last_phase": f.get("lastPhase"), "duration_s": (fe - fs) / 1000.0,
-            "start_time": fs, "end_time": fe, "pull_number": n,
-        }, ["report", "fight_id"])
-        if not be.done(code, fid, "session"):
-            ingest_pull_session(be, code, fid, fs, fe, avoid)
-            be.mark(code, fid, "session")
-        res = "kill" if f.get("kill") else f"wipe {f.get('bossPercentage')}%"
-        print(f"  pull #{n:<3} {f.get('name', '?')[:24]:24} "
-              f"{(fe - fs) / 1000:6.0f}s  {res}", flush=True)
-    be.commit()
-    print(f"ok: {len(fights)} pulls -> label {cfg['label']}")
+    codes = report_codes(cfg)
+    total = 0
+    for night, code in enumerate(codes, 1):
+        if len(codes) > 1:
+            print(f"-- night {night}/{len(codes)}: {code} --")
+        rep = report_meta(be, code)
+        be.upsert("raid_session", {
+            "report": code, "guild": cfg["guild"],
+            "zone": (rep.get("zone") or {}).get("name"),
+            "zone_id": (rep.get("zone") or {}).get("id"),
+            "raid_label": cfg["label"], "title": rep.get("title"),
+            "start_ts": rep.get("startTime"), "end_ts": rep.get("endTime"),
+            "ingested_at": datetime.now(timezone.utc).isoformat(),
+        }, ["report"])
+
+        fights = fights_query(be, code)
+        if not fights:
+            sys.exit(f"no boss pulls in report {code}")
+        seen_per_boss = {}
+        for f in sorted(fights, key=lambda x: x["startTime"]):
+            fid, fs, fe = f["id"], f["startTime"], f["endTime"]
+            n = seen_per_boss[f["encounterID"]] = seen_per_boss.get(f["encounterID"], 0) + 1
+            be.upsert("pull", {
+                "report": code, "fight_id": fid, "encounter_id": f["encounterID"],
+                "boss": f.get("name"), "difficulty": f.get("difficulty"),
+                "size": f.get("size"), "kill": 1 if f.get("kill") else 0,
+                "boss_pct": f.get("bossPercentage"), "fight_pct": f.get("fightPercentage"),
+                "last_phase": f.get("lastPhase"), "duration_s": (fe - fs) / 1000.0,
+                "start_time": fs, "end_time": fe, "pull_number": n,
+            }, ["report", "fight_id"])
+            if not be.done(code, fid, "session"):
+                ingest_pull_session(be, code, fid, fs, fe, avoid)
+                be.mark(code, fid, "session")
+            res = "kill" if f.get("kill") else f"wipe {f.get('bossPercentage')}%"
+            print(f"  pull #{n:<3} {f.get('name', '?')[:24]:24} "
+                  f"{(fe - fs) / 1000:6.0f}s  {res}", flush=True)
+        be.commit()
+        total += len(fights)
+    print(f"ok: {total} pulls -> label {cfg['label']}")
 
 
 def ingest_pull_session(be, code, fid, fs, fe, avoid_ids):
@@ -351,26 +424,26 @@ def ingest_damage_taken_by_ability(be, code, fid, fs, fe):
 def cmd_deep(be, cfg, args):
     """Raw events per boss pull: phases, death recaps, graphs (dtps/hps/dps +
     healer mana), casts, damage taken/done, buffs/debuffs, healing table."""
-    code = cfg["report"]
-    ingest_actors(be, code)
-    fights = fights_query(be, code)
-    healer_ids = [r["actor_id"] for r in be.con.execute(
-        "SELECT DISTINCT actor_id FROM composition WHERE report=? AND role='healer'",
-        (code,))]
-    if not healer_ids:
-        print("WARNING: no healers in composition — run `session` first "
-              "(mana series will be skipped)")
-    print(f"{len(fights)} boss pulls; healers (mana tracked): {healer_ids}")
-    for f in sorted(fights, key=lambda x: x["startTime"]):
-        st = ingest_pull_deep(be, code, f, healer_ids)
-        n = {k: be.con.execute(
-            f"SELECT COUNT(*) c FROM {t} WHERE report=? AND fight_id=?",
-            (code, f["id"])).fetchone()["c"]
-            for k, t in (("casts", "deep_cast"), ("dt", "deep_dmg_taken"),
-                         ("dd", "deep_dmg_done"), ("aura", "deep_aura"))}
-        print(f"  f{f['id']:>3} {f['name'][:22]:22} {st:4} "
-              f"casts={n['casts']:<5} dmgTaken={n['dt']:<5} dmgDone={n['dd']:<6} "
-              f"auras={n['aura']:<5}", flush=True)
+    for code in report_codes(cfg):
+        ingest_actors(be, code)
+        fights = fights_query(be, code)
+        healer_ids = [r["actor_id"] for r in be.con.execute(
+            "SELECT DISTINCT actor_id FROM composition WHERE report=? AND role='healer'",
+            (code,))]
+        if not healer_ids:
+            print("WARNING: no healers in composition — run `session` first "
+                  "(mana series will be skipped)")
+        print(f"{code}: {len(fights)} boss pulls; healers (mana tracked): {healer_ids}")
+        for f in sorted(fights, key=lambda x: x["startTime"]):
+            st = ingest_pull_deep(be, code, f, healer_ids)
+            n = {k: be.con.execute(
+                f"SELECT COUNT(*) c FROM {t} WHERE report=? AND fight_id=?",
+                (code, f["id"])).fetchone()["c"]
+                for k, t in (("casts", "deep_cast"), ("dt", "deep_dmg_taken"),
+                             ("dd", "deep_dmg_done"), ("aura", "deep_aura"))}
+            print(f"  f{f['id']:>3} {f['name'][:22]:22} {st:4} "
+                  f"casts={n['casts']:<5} dmgTaken={n['dt']:<5} dmgDone={n['dd']:<6} "
+                  f"auras={n['aura']:<5}", flush=True)
     print("quota:", json.dumps(quota()))
 
 
@@ -475,7 +548,12 @@ def ingest_pull_deep(be, code, f, healer_ids):
 def cmd_extras(be, cfg, args):
     """Timestamped dispel/interrupt events + full healing events + enemy casts
     (interrupt opportunities) — per boss pull."""
-    code = cfg["report"]
+    for code in report_codes(cfg):
+        _extras_one(be, code)
+    print("quota:", json.dumps(quota()))
+
+
+def _extras_one(be, code):
     fights = fights_query(be, code)
     for f in sorted(fights, key=lambda x: x["startTime"]):
         fid, fs, fe = f["id"], f["startTime"], f["endTime"]
@@ -516,7 +594,6 @@ def cmd_extras(be, cfg, args):
         be.mark(code, fid, "extras")
         print(f"  f{fid:>3} extras: {n} dispel/interrupt, {nh} heal, "
               f"{ne} enemy casts", flush=True)
-    print("quota:", json.dumps(quota()))
 
 
 # ----------------------------------------------------------------------- trash
@@ -524,13 +601,18 @@ def cmd_extras(be, cfg, args):
 def cmd_trash(be, cfg, args):
     """Trash fights = fights WITHOUT encounterID. Deaths + top damage sources
     + timing (pacing input). One Deaths table + one DamageTaken table per fight."""
-    code = cfg["report"]
+    for code in report_codes(cfg):
+        _trash_one(be, code)
+    print("quota:", json.dumps(quota()))
+
+
+def _trash_one(be, code):
     ingest_actors(be, code)
     q = ('{ reportData { report(code:"%s"){ fights '
          '{ id name encounterID startTime endTime } } } }' % code)
     fights = unwrap(gql(be, q), "reportData", "report", "fights") or []
     trash = [f for f in fights if not f.get("encounterID")]
-    print(f"{len(trash)} trash fights")
+    print(f"{code}: {len(trash)} trash fights")
     for f in sorted(trash, key=lambda x: x["startTime"]):
         fid, fs, fe = f["id"], f["startTime"], f["endTime"]
         t = fetch_table(be, code, fid, fs, fe, "Deaths")
@@ -554,7 +636,6 @@ def cmd_trash(be, cfg, args):
         flag = f" deaths={len(deaths)}" if deaths else ""
         print(f"  f{fid:>3} {f['name'][:36]:36} {(fe-fs)/1000:5.0f}s{flag}", flush=True)
     be.commit()
-    print("quota:", json.dumps(quota()))
 
 
 # ------------------------------------------------------------------------ tops
@@ -562,13 +643,15 @@ def cmd_trash(be, cfg, args):
 def cmd_tops(be, cfg, args):
     """top1/top2 rankings per (spec x boss x difficulty) actually played by
     the roster. Same-size only (cfg size): benchmark apples-to-apples."""
-    code = cfg["report"]
+    codes = report_codes(cfg)
+    ph = ",".join("?" for _ in codes)
     size = cfg.get("size") or 10
     specs = [dict(r) for r in be.con.execute(
-        "SELECT DISTINCT class, spec, role FROM composition WHERE report=?", (code,))]
+        f"SELECT DISTINCT class, spec, role FROM composition WHERE report IN ({ph})",
+        codes)]
     encs = [dict(r) for r in be.con.execute(
-        "SELECT DISTINCT encounter_id, boss, difficulty FROM pull WHERE report=? "
-        "ORDER BY encounter_id, difficulty", (code,))]
+        f"SELECT DISTINCT encounter_id, boss, difficulty FROM pull "
+        f"WHERE report IN ({ph}) ORDER BY encounter_id, difficulty", codes)]
     print(f"{len(specs)} specs x {len(encs)} (boss,diff)")
     for e in encs:
         for s in specs:
@@ -665,14 +748,15 @@ def cmd_top_detail(be, cfg, args):
     GOTCHA (engraved): events(dataType:DamageTaken, targetID:X) returns ZERO
     silently on classic -> fetch FULL DamageTaken and filter code-side.
     Casts+sourceID and Buffs+targetID are verified OK."""
-    code = cfg["report"]
-    rows = [dict(r) for r in be.con.execute("""
+    codes = report_codes(cfg)
+    ph = ",".join("?" for _ in codes)
+    rows = [dict(r) for r in be.con.execute(f"""
         SELECT tp.* FROM top_parse tp WHERE EXISTS (
           SELECT 1 FROM pull p JOIN composition c
             ON c.report=p.report AND c.fight_id=p.fight_id
           WHERE p.encounter_id=tp.encounter_id AND p.difficulty=tp.difficulty
-            AND (c.class || '-' || c.spec) = tp.spec_key AND p.report=?)
-        ORDER BY tp.encounter_id, tp.spec_key, tp.rank""", (code,))]
+            AND (c.class || '-' || c.spec) = tp.spec_key AND p.report IN ({ph}))
+        ORDER BY tp.encounter_id, tp.spec_key, tp.rank""", codes)]
     print(f"{len(rows)} top parses to detail (played specs only)")
     for tp in rows:
         rcode, rfid = tp["report"], tp["fight_id"]
@@ -758,11 +842,12 @@ def cmd_top_detail(be, cfg, args):
 def cmd_benchmark(be, cfg, args):
     """Zone top logs raid-wide (avoidable inference input). Optional: only
     needed when no zone mechanics ref exists yet (data-driven bootstrap)."""
-    code = cfg["report"]
+    codes = report_codes(cfg)
+    ph = ",".join("?" for _ in codes)
     size = cfg.get("size") or 10
     encs = [dict(r) for r in be.con.execute(
-        "SELECT DISTINCT encounter_id, boss, difficulty FROM pull WHERE report=?",
-        (code,))]
+        f"SELECT DISTINCT encounter_id, boss, difficulty FROM pull "
+        f"WHERE report IN ({ph})", codes)]
     for e in encs:
         reports = {}
         for metric in ("dps", "hps"):
@@ -789,9 +874,11 @@ def cmd_infer_avoidable(be, cfg, args):
     """Avoidable candidates: abilities where tops take ~0 dmg/min and we take
     >0. Writes avoidable_ref status='candidate'; validate manually or against
     the zone mechanics ref afterwards."""
-    code = cfg["report"]
+    codes = report_codes(cfg)
+    ph = ",".join("?" for _ in codes)
     enc_ids = {r["encounter_id"]: r["boss"] for r in be.con.execute(
-        "SELECT DISTINCT encounter_id, boss FROM pull WHERE report=?", (code,))}
+        f"SELECT DISTINCT encounter_id, boss FROM pull WHERE report IN ({ph})",
+        codes)}
     n = 0
     for eid, ename in enc_ids.items():
         ours = {r["ability_id"]: dict(r) for r in be.con.execute("""
@@ -838,7 +925,7 @@ def cmd_infer_avoidable(be, cfg, args):
 def cmd_status(be, cfg, args):
     """Binary gate: print PASS/FAIL per stage. Exit code 1 if anything missing.
     Use this between pipeline stages — never assume a stage is complete."""
-    code = cfg["report"]
+    codes = report_codes(cfg)
     fails = []
 
     def check(name, ok, detail=""):
@@ -846,45 +933,49 @@ def cmd_status(be, cfg, args):
         if not ok:
             fails.append(name)
 
-    n_pulls = be.con.execute("SELECT COUNT(*) c FROM pull WHERE report=?",
-                             (code,)).fetchone()["c"]
-    check("session: pulls ingested", n_pulls > 0, f"{n_pulls} pulls")
-    n_sess = be.con.execute(
-        "SELECT COUNT(*) c FROM done_marker WHERE report=? AND what='session'",
-        (code,)).fetchone()["c"]
-    check("session: per-pull detail", n_pulls > 0 and n_sess >= n_pulls,
-          f"{n_sess}/{n_pulls}")
-    n_deep = be.con.execute(
-        "SELECT COUNT(*) c FROM done_marker WHERE report=? AND what='pull_deep'",
-        (code,)).fetchone()["c"]
-    check("deep: raw events", n_pulls > 0 and n_deep >= n_pulls, f"{n_deep}/{n_pulls}")
-    n_ext = be.con.execute(
-        "SELECT COUNT(*) c FROM done_marker WHERE report=? AND what='extras'",
-        (code,)).fetchone()["c"]
-    check("extras: dispel/interrupt/heal events", n_pulls > 0 and n_ext >= n_pulls,
-          f"{n_ext}/{n_pulls}")
-    n_trash = be.con.execute("SELECT COUNT(*) c FROM trash_fight WHERE report=?",
-                             (code,)).fetchone()["c"]
-    check("trash: ingested", n_trash > 0, f"{n_trash} fights "
-          "(0 can be legit on a full-clear-no-trash log — verify on WCL)")
+    for night, code in enumerate(codes, 1):
+        tag = f"night {night} ({code}) " if len(codes) > 1 else ""
+        n_pulls = be.con.execute("SELECT COUNT(*) c FROM pull WHERE report=?",
+                                 (code,)).fetchone()["c"]
+        check(tag + "session: pulls ingested", n_pulls > 0, f"{n_pulls} pulls")
+        n_sess = be.con.execute(
+            "SELECT COUNT(*) c FROM done_marker WHERE report=? AND what='session'",
+            (code,)).fetchone()["c"]
+        check(tag + "session: per-pull detail", n_pulls > 0 and n_sess >= n_pulls,
+              f"{n_sess}/{n_pulls}")
+        n_deep = be.con.execute(
+            "SELECT COUNT(*) c FROM done_marker WHERE report=? AND what='pull_deep'",
+            (code,)).fetchone()["c"]
+        check(tag + "deep: raw events", n_pulls > 0 and n_deep >= n_pulls,
+              f"{n_deep}/{n_pulls}")
+        n_ext = be.con.execute(
+            "SELECT COUNT(*) c FROM done_marker WHERE report=? AND what='extras'",
+            (code,)).fetchone()["c"]
+        check(tag + "extras: dispel/interrupt/heal events",
+              n_pulls > 0 and n_ext >= n_pulls, f"{n_ext}/{n_pulls}")
+        n_trash = be.con.execute("SELECT COUNT(*) c FROM trash_fight WHERE report=?",
+                                 (code,)).fetchone()["c"]
+        check(tag + "trash: ingested", n_trash > 0, f"{n_trash} fights "
+              "(0 can be legit on a full-clear-no-trash log — verify on WCL)")
+
+        # Expected-positive integrity checks (extraction sanity).
+        bad = [dict(r) for r in be.con.execute("""
+            SELECT p.fight_id, c.player_name FROM pull p
+            JOIN composition c ON c.report=p.report AND c.fight_id=p.fight_id
+            WHERE p.report=? AND p.duration_s > 60 AND NOT EXISTS (
+              SELECT 1 FROM deep_dmg_taken dt WHERE dt.report=p.report
+                AND dt.fight_id=p.fight_id AND dt.target_id=c.actor_id)""",
+            (code,))] if n_deep else []
+        check(tag + "integrity: every player has DamageTaken events (pulls >60s)",
+              n_deep > 0 and not bad,
+              "" if not bad else f"{len(bad)} player-pulls with ZERO events, e.g. "
+              + ", ".join(f"f{b['fight_id']}:{b['player_name']}" for b in bad[:4]))
+
     n_tops = be.con.execute("SELECT COUNT(*) c FROM top_parse").fetchone()["c"]
     check("tops: rankings", n_tops > 0, f"{n_tops} parses")
     n_topd = be.con.execute(
         "SELECT COUNT(*) c FROM done_marker WHERE what LIKE 'top:%'").fetchone()["c"]
     check("tops: details", n_tops > 0 and n_topd > 0, f"{n_topd}/{n_tops}")
-
-    # Expected-positive integrity checks (extraction sanity).
-    bad = [dict(r) for r in be.con.execute("""
-        SELECT p.fight_id, c.player_name FROM pull p
-        JOIN composition c ON c.report=p.report AND c.fight_id=p.fight_id
-        WHERE p.report=? AND p.duration_s > 60 AND NOT EXISTS (
-          SELECT 1 FROM deep_dmg_taken dt WHERE dt.report=p.report
-            AND dt.fight_id=p.fight_id AND dt.target_id=c.actor_id)""",
-        (code,))] if n_deep else []
-    check("integrity: every player has DamageTaken events (pulls >60s)",
-          n_deep > 0 and not bad,
-          "" if not bad else f"{len(bad)} player-pulls with ZERO events, e.g. "
-          + ", ".join(f"f{b['fight_id']}:{b['player_name']}" for b in bad[:4]))
 
     refs = os.path.join(be.workdir, "refs")
     check("refs: mechanics_ref.json", os.path.exists(os.path.join(refs, "mechanics_ref.json")))
@@ -917,11 +1008,15 @@ def main():
     ap.add_argument("--workdir", default=None)
     sub = ap.add_subparsers(dest="cmd", required=True)
     pi = sub.add_parser("init")
-    pi.add_argument("--report", required=True)
+    pi.add_argument("--report", action="append", required=True,
+                    help="repeatable and/or comma-separated (multi-night ID)")
     pi.add_argument("--guild", required=True)
     pi.add_argument("--label", default=None)
     pi.add_argument("--lang", default="fr")
     pi.add_argument("--size", type=int, default=10)
+    pa = sub.add_parser("add-report")
+    pa.add_argument("--report", action="append", required=True,
+                    help="report code(s) to append to this workdir's raid ID")
     for name in ("session", "deep", "extras", "trash", "tops", "top-detail",
                  "status", "quota", "all", "infer-avoidable"):
         sub.add_parser(name)
@@ -940,7 +1035,8 @@ def main():
     {"session": cmd_session, "deep": cmd_deep, "extras": cmd_extras,
      "trash": cmd_trash, "tops": cmd_tops, "top-detail": cmd_top_detail,
      "status": cmd_status, "quota": cmd_quota, "all": cmd_all,
-     "benchmark": cmd_benchmark, "infer-avoidable": cmd_infer_avoidable}[args.cmd](be, cfg, args)
+     "add-report": cmd_add_report, "benchmark": cmd_benchmark,
+     "infer-avoidable": cmd_infer_avoidable}[args.cmd](be, cfg, args)
 
 
 if __name__ == "__main__":

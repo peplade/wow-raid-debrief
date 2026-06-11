@@ -35,7 +35,8 @@ import sys
 import unicodedata
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from wcl import Backend, load_config, load_env, save_config, workdir_from_args
+from wcl import (Backend, load_config, load_env, report_codes, save_config,
+                 workdir_from_args)
 from ingest import RAID_CDS
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -94,6 +95,7 @@ LOCALES = {
         "idle_between": "between", "idle_and": "and", "start": "start", "end": "end",
         "player_card": "player card", "dps_label": "DPS", "hps_label": "HPS",
         "taken_per_min": "taken/min",
+        "nights_of": "nights of", "night_label": "night",
     },
     "fr": {
         "raid_report": "CR de raid", "back_hub": "← retour au CR",
@@ -147,6 +149,7 @@ LOCALES = {
         "idle_between": "entre", "idle_and": "et", "start": "début", "end": "fin",
         "player_card": "fiche joueur", "dps_label": "DPS", "hps_label": "HPS",
         "taken_per_min": "pris/min",
+        "nights_of": "soirées des", "night_label": "soirée",
     },
 }
 
@@ -178,11 +181,14 @@ class Gen:
         self.workdir = workdir
         self.be = Backend(workdir)
         self.cfg = load_config(workdir)
-        self.code = self.cfg["report"]
+        self.codes = report_codes(self.cfg)
+        self.code = self.codes[0]
         self.label = self.cfg["label"]
         self.lang = (self.cfg.get("lang") or "en").lower()
         self.L = LOCALES.get(self.lang, LOCALES["en"])
         self.wcl_url = f"https://classic.warcraftlogs.com/reports/{self.code}"
+        # night number (1-based) per report, chronological.
+        self.night_of = {c: i for i, c in enumerate(self.codes, 1)}
         self.an = os.path.join(workdir, "digests", "analysis")
         self.content = os.path.join(workdir, "content")
         self.out_pub = os.path.join(workdir, "pages", self.label)
@@ -239,14 +245,24 @@ class Gen:
         if os.path.exists(zp):
             z = json.load(open(zp, encoding="utf-8"))
             self.spec_names = z.get("spec_names") or {}
-        # Night date from session.
-        s = self.be.con.execute("SELECT start_ts FROM raid_session WHERE report=?",
-                                (self.code,)).fetchone()
-        self.night = ""
-        if s and s["start_ts"]:
-            from datetime import datetime, timezone
-            self.night = datetime.fromtimestamp(
-                s["start_ts"] / 1000, tz=timezone.utc).strftime("%d/%m/%Y")
+        # Night date(s) from sessions — "10/06/2026" or "07/06 + 08/06/2026".
+        from datetime import datetime, timezone
+        dates = []
+        for c in self.codes:
+            s = self.be.con.execute(
+                "SELECT start_ts FROM raid_session WHERE report=?", (c,)).fetchone()
+            if s and s["start_ts"]:
+                dates.append(datetime.fromtimestamp(
+                    s["start_ts"] / 1000, tz=timezone.utc))
+        if len(dates) > 1:
+            self.night = " + ".join(d.strftime("%d/%m") for d in dates[:-1]) \
+                + " + " + dates[-1].strftime("%d/%m/%Y")
+        elif dates:
+            self.night = dates[0].strftime("%d/%m/%Y")
+        else:
+            self.night = ""
+        self.nights_word = (self.L["nights_of"] if len(dates) > 1
+                            else self.L["night_of"])
         self.guild = self.cfg.get("guild") or ""
 
     # ------------------------------------------------------------- helpers
@@ -288,8 +304,12 @@ class Gen:
         return HEAD.format(lang=self.lang, title=esc(title), css=self.css,
                            robots=robots)
 
+    def wcl_link(self, code):
+        return f"https://classic.warcraftlogs.com/reports/{code}"
+
     def foot(self, js=""):
-        wcl = f'<a href="{self.wcl_url}">{self.code}</a>'
+        wcl = " + ".join(f'<a href="{self.wcl_link(c)}">{c}</a>'
+                         for c in self.codes)
         return FOOT.format(footer=self.L["footer"].format(wcl=wcl), js=js)
 
     # --------------------------------------------------------- chart pieces
@@ -490,11 +510,28 @@ class Gen:
 
     # ---------------------------------------------------------------- pages
 
+    def _session_t0(self):
+        return {c: ((self.be.con.execute(
+            "SELECT start_ts FROM raid_session WHERE report=?", (c,)).fetchone()
+            or {"start_ts": 0})["start_ts"] or 0) for c in self.codes}
+
     def encounters(self):
-        return [dict(r) for r in self.be.con.execute(
-            "SELECT encounter_id, boss, difficulty FROM pull WHERE report=? "
-            "GROUP BY encounter_id, boss, difficulty ORDER BY MIN(start_time)",
-            (self.code,))]
+        """(enc, diff) ordered by ABSOLUTE first-pull time across nights
+        (pull.start_time is report-relative)."""
+        t0 = self._session_t0()
+        ph = ",".join("?" for _ in self.codes)
+        firsts = {}
+        for r in self.be.con.execute(
+                f"SELECT report, encounter_id, boss, difficulty, "
+                f"MIN(start_time) st FROM pull WHERE report IN ({ph}) "
+                f"GROUP BY report, encounter_id, difficulty", self.codes):
+            k = (r["encounter_id"], r["difficulty"])
+            abs_ms = t0.get(r["report"], 0) + (r["st"] or 0)
+            if k not in firsts or abs_ms < firsts[k][0]:
+                firsts[k] = (abs_ms, {"encounter_id": r["encounter_id"],
+                                      "boss": r["boss"],
+                                      "difficulty": r["difficulty"]})
+        return [v for _, v in sorted(firsts.values(), key=lambda x: x[0])]
 
     def page_boss(self, enc_id, diff, log_name):
         L = self.L
@@ -515,7 +552,7 @@ class Gen:
         title = f"{name} {suffix}{size} — {L['raid_report']} {self.guild} {self.night}"
         h = [self.head(title)]
         h.append(f"""<header class="hero"><h1><em>{esc(name)}</em> — {dlab} {size}</h1>
-<div class="sub">{L['night_of']} {self.night} · <a href="../index.html">{L['back_hub']}</a></div>
+<div class="sub">{self.nights_word} {self.night} · <a href="../index.html">{L['back_hub']}</a></div>
 <div class="stats">
 <div class="stat"><b class="{'r' if not kills else 'g'}">{len(pulls_)}</b><span>{L['pulls']}</span></div>
 <div class="stat"><b class="{'g' if kills else 'r'}">{kills or '0'}</b><span>{L['kill']}</span></div>
@@ -532,13 +569,17 @@ class Gen:
             res = ("KILL" if p["kill"] else
                    f"{L['wipe']} — {p['fight_pct']:.1f} {L['fight_remaining']}")
             cls = "kill" if p["kill"] else "wipe"
+            pcode = p.get("report") or self.code
+            nb = (f" <span class='mut'>· {L['night_label']} {p['night']}</span>"
+                  if len(self.codes) > 1 and p.get("night") else "")
             h.append(f"""<article class="boss"><header>
 <span class="pbadge {cls}">#{p['pull']}</span>
-<h3>{fmt_dur(p['duration_s'])} · {res}
- <a class="mut" href="{self.wcl_url}#fight={p['fight_id']}">{L['log']}</a></h3>
+<h3>{fmt_dur(p['duration_s'])} · {res}{nb}
+ <a class="mut" href="{self.wcl_link(pcode)}#fight={p['fight_id']}">{L['log']}</a></h3>
 </header><div class="bbody">""")
             ch, js = self.timeline_pull_chart(
-                f"tl{enc_id}{suffix}{p['pull']}", p, self.dtps_for(p["fight_id"]))
+                f"tl{enc_id}{suffix}{p['pull']}", p,
+                self.dtps_for(pcode, p["fight_id"]))
             h.append(ch)
             js_all.append(js)
             note = self.frag("boss", ckey, f"pull_{p['pull']}.html")
@@ -556,22 +597,40 @@ class Gen:
 
     _dtps_cache = None
 
-    def dtps_for(self, fid):
+    def dtps_for(self, report, fid):
         if self._dtps_cache is None:
             self._dtps_cache = {}
+            ph = ",".join("?" for _ in self.codes)
             for r in self.be.con.execute(
-                    "SELECT fight_id, payload FROM deep_graph "
-                    "WHERE report=? AND kind='dtps'", (self.code,)):
-                self._dtps_cache[r["fight_id"]] = json.loads(r["payload"])
-        return self._dtps_cache.get(fid) or []
+                    f"SELECT report, fight_id, payload FROM deep_graph "
+                    f"WHERE report IN ({ph}) AND kind='dtps'", self.codes):
+                self._dtps_cache[(r["report"], r["fight_id"])] = \
+                    json.loads(r["payload"])
+        return self._dtps_cache.get((report, fid)) or []
 
     def hub_boss_table(self):
         L = self.L
-        rows = self.be.con.execute(
-            "SELECT encounter_id, boss, difficulty, COUNT(*) pulls, SUM(kill) kills, "
-            "SUM(duration_s) dur, MIN(fight_pct) best, MIN(start_time) st "
-            "FROM pull WHERE report=? GROUP BY encounter_id, difficulty ORDER BY st",
-            (self.code,)).fetchall()
+        ph = ",".join("?" for _ in self.codes)
+        agg = {}
+        t0 = self._session_t0()
+        for r in self.be.con.execute(
+                f"SELECT report, encounter_id, boss, difficulty, COUNT(*) pulls, "
+                f"SUM(kill) kills, SUM(duration_s) dur, MIN(fight_pct) best, "
+                f"MIN(start_time) st FROM pull WHERE report IN ({ph}) "
+                f"GROUP BY report, encounter_id, difficulty", self.codes):
+            k = (r["encounter_id"], r["difficulty"])
+            a = agg.setdefault(k, {"encounter_id": r["encounter_id"],
+                                   "boss": r["boss"], "difficulty": r["difficulty"],
+                                   "pulls": 0, "kills": 0, "dur": 0.0,
+                                   "best": None, "abs": None})
+            a["pulls"] += r["pulls"]
+            a["kills"] += r["kills"] or 0
+            a["dur"] += r["dur"] or 0
+            if r["best"] is not None:
+                a["best"] = r["best"] if a["best"] is None else min(a["best"], r["best"])
+            abs_ms = t0.get(r["report"], 0) + (r["st"] or 0)
+            a["abs"] = abs_ms if a["abs"] is None else min(a["abs"], abs_ms)
+        rows = sorted(agg.values(), key=lambda a: a["abs"] or 0)
         dj = self.J("deaths.json", [])
         dcount = {}
         for d in dj:
@@ -599,9 +658,10 @@ class Gen:
         return "".join(out)
 
     def roster(self):
+        ph = ",".join("?" for _ in self.codes)
         return [r["player_name"] for r in self.be.con.execute(
-            "SELECT DISTINCT player_name FROM composition WHERE report=? "
-            "ORDER BY player_name", (self.code,)) if r["player_name"]]
+            f"SELECT DISTINCT player_name FROM composition WHERE report IN ({ph}) "
+            f"ORDER BY player_name", self.codes) if r["player_name"]]
 
     def hub_players_links(self):
         items = []
@@ -614,44 +674,67 @@ class Gen:
         return "<div class='panel'><div class='flex'>" + " ".join(items) + "</div></div>"
 
     def hub_pacing(self):
+        """One pacing bar PER NIGHT (pacing.json {"nights": [...]} shape).
+        Legacy single-night shape (flat "segments") still accepted."""
         L = self.L
         pacing = self.J("pacing.json") or {}
-        tot = pacing.get("totals_s") or {}
-        segs = pacing.get("segments") or []
-        total = sum(tot.values()) or 1
-        bar = ["<div style='display:flex;height:26px;border-radius:8px;overflow:hidden;"
-               "border:1px solid var(--line)'>"]
+        nights = pacing.get("nights")
+        if nights is None:                      # legacy flat shape
+            nights = [{"night": 1, "segments": pacing.get("segments") or [],
+                       "totals_s": pacing.get("totals_s") or {}}]
         colors = {"boss": "#e0744f", "trash": "#8a93a2", "idle": "#232838"}
-        for s in segs:
-            w = 100.0 * (s["e"] - s["s"]) / total
-            t = f"{s.get('name', 'idle')} ({fmt_dur(s['e'] - s['s'])})"
-            bar.append(f"<div title=\"{esc(t)}\" style='width:{w:.2f}%;"
-                       f"background:{colors[s['kind']]}'></div>")
-        bar.append("</div>")
-        leg = (f"■ boss ({fmt_dur(tot.get('boss', 0))}) · "
-               f"■ trash ({fmt_dur(tot.get('trash', 0))}) · "
-               f"■ idle ({fmt_dur(tot.get('idle', 0))}) — {L['pacing_legend']}")
-        idles = sorted((s for s in segs if s["kind"] == "idle"),
-                       key=lambda x: x["e"] - x["s"], reverse=True)[:6]
+        parts = ["<div class='panel'>"]
+        all_idles = []
+        for nd in nights:
+            segs = nd.get("segments") or []
+            tot = nd.get("totals_s") or {}
+            total = sum(tot.values()) or 1
+            if len(nights) > 1:
+                from datetime import datetime, timezone
+                dlab = ""
+                if nd.get("t0_ms"):
+                    dlab = " · " + datetime.fromtimestamp(
+                        nd["t0_ms"] / 1000, tz=timezone.utc).strftime("%d/%m")
+                parts.append(f"<h4 style='margin:8px 0 6px'>"
+                             f"{L['night_label'].capitalize()} {nd.get('night')}"
+                             f"{dlab}</h4>")
+            bar = ["<div style='display:flex;height:26px;border-radius:8px;"
+                   "overflow:hidden;border:1px solid var(--line)'>"]
+            for s in segs:
+                w = 100.0 * (s["e"] - s["s"]) / total
+                t = f"{s.get('name', 'idle')} ({fmt_dur(s['e'] - s['s'])})"
+                bar.append(f"<div title=\"{esc(t)}\" style='width:{w:.2f}%;"
+                           f"background:{colors[s['kind']]}'></div>")
+            bar.append("</div>")
+            parts.append("".join(bar))
+            leg = (f"■ boss ({fmt_dur(tot.get('boss', 0))}) · "
+                   f"■ trash ({fmt_dur(tot.get('trash', 0))}) · "
+                   f"■ idle ({fmt_dur(tot.get('idle', 0))}) — {L['pacing_legend']}")
+            parts.append(f"<div class='legend'>{leg}</div>")
+            for i in (s for s in segs if s["kind"] == "idle"):
+                all_idles.append((i, segs))
+        all_idles.sort(key=lambda x: x[0]["e"] - x[0]["s"], reverse=True)
         li = []
-        for i in idles:
+        for i, segs in all_idles[:6]:
             prev = [s for s in segs if s["e"] <= i["s"] and s["kind"] != "idle"]
             nxt = [s for s in segs if s["s"] >= i["e"] and s["kind"] != "idle"]
             li.append(f"<li><b>{fmt_dur(i['e'] - i['s'])}</b> {L['idle_between']} "
                       f"« {esc(prev[-1]['name'] if prev else L['start'])} » "
                       f"{L['idle_and']} « {esc(nxt[0]['name'] if nxt else L['end'])} »</li>")
-        return (f"<div class='panel'>{''.join(bar)}"
-                f"<div class='legend'>{leg}</div>"
-                f"<h4 style='margin-top:14px'>{L['longest_idles']}</h4>"
-                f"<ul class='tight'>{''.join(li)}</ul></div>")
+        parts.append(f"<h4 style='margin-top:14px'>{L['longest_idles']}</h4>"
+                     f"<ul class='tight'>{''.join(li)}</ul></div>")
+        return "".join(parts)
 
     def page_hub(self):
         L = self.L
+        wcl_links = " · ".join(
+            f"<a href='{self.wcl_link(c)}'>WCL{'' if len(self.codes) == 1 else f' {i}'} ↗</a>"
+            for i, c in enumerate(self.codes, 1))
         hero = self.frag("hub", "hero.html") or (
             f"<header class='hero'><h1>{L['raid_report']} — <em>{esc(self.guild)}</em>"
             f" · {esc(self.cfg.get('zone_name') or '')}</h1>"
-            f"<div class='sub'>{L['night_of']} {self.night} · "
-            f"<a href='{self.wcl_url}'>WCL ↗</a></div></header>")
+            f"<div class='sub'>{self.nights_word} {self.night} · "
+            f"{wcl_links}</div></header>")
         body = self.frag("hub", "body.html") or (
             "__BOSS_TABLE__ __PLAYERS_LINKS__ __PACING__")
         body = (body.replace("__BOSS_TABLE__", self.hub_boss_table())
@@ -684,25 +767,30 @@ class Gen:
             return
         specs = sorted({r["spec"] for r in ex})
         role = ex[0]["role"]
-        kill_fids = {r["fight_id"] for r in self.be.con.execute(
-            "SELECT fight_id FROM pull WHERE report=? AND kill=1", (self.code,))}
+        ph = ",".join("?" for _ in self.codes)
+        kill_fids = {(r["report"], r["fight_id"]) for r in self.be.con.execute(
+            f"SELECT report, fight_id FROM pull WHERE report IN ({ph}) AND kill=1",
+            self.codes)}
         # Qualified deaths: on a KILL (always significant) vs first deaths of a
         # wipe (seq<=2, probable trigger) — dying in the collective wipe is NOT
         # an individual fail; the raw counter lies.
-        d_kill = [d for d in dj if d["fight_id"] in kill_fids]
-        d_first = [d for d in dj if d["fight_id"] not in kill_fids and d["seq"] <= 2]
+        d_kill = [d for d in dj
+                  if (d.get("report", self.code), d["fight_id"]) in kill_fids]
+        d_first = [d for d in dj
+                   if (d.get("report", self.code), d["fight_id"]) not in kill_fids
+                   and d["seq"] <= 2]
         title = f"{name} — {L['player_card']} {self.night} · {self.guild}"
         h = [self.head(title)]
         h.append(f"""<header class="hero"><h1><em>{esc(name)}</em> — \
 {esc(' / '.join(self.tr_spec(s) for s in specs))}</h1>
-<div class="sub">{L['night_of']} {self.night} · \
+<div class="sub">{self.nights_word} {self.night} · \
 <a href="../../index.html">{L['back_hub']}</a></div>
 <div class="stats">
 <div class="stat"><b class="{'r' if d_kill else 'g'}">{len(d_kill)}</b>\
 <span>{L['deaths_on_kill']}</span></div>
 <div class="stat"><b class="{'r' if d_first else 'g'}">{len(d_first)}</b>\
 <span>{L['first_deaths_wipe']}</span></div>
-<div class="stat"><b>{len({r['fight_id'] for r in ex})}</b>\
+<div class="stat"><b>{len({(r.get('report'), r['fight_id']) for r in ex})}</b>\
 <span>{L['pulls_played']}</span></div>
 {self.frag('players', name, 'stats_extra.html')}
 </div></header><main>""")
@@ -710,10 +798,11 @@ class Gen:
         if verdict:
             h.append(f"<h2>{L['verdict']}</h2><div class='panel'>{verdict}</div>")
         if bench:
+            ph2 = ",".join("?" for _ in self.codes)
             boss_by_log = {r["boss"]: (r["encounter_id"], r["difficulty"])
                            for r in self.be.con.execute(
-                               "SELECT DISTINCT boss, encounter_id, difficulty "
-                               "FROM pull WHERE report=?", (self.code,))}
+                               f"SELECT DISTINCT boss, encounter_id, difficulty "
+                               f"FROM pull WHERE report IN ({ph2})", self.codes)}
             h.append(f"<h2>{L['vs_tops_title']} <small>{L['vs_tops_sub']}</small></h2>")
             h.append(f"<div class='panel'><table class='tbl'><thead><tr>"
                      f"<th>{L['th_boss']}</th>"
@@ -784,10 +873,11 @@ class Gen:
 
     def boss_name_by_log(self, log_name):
         if self._log_to_enc is None:
+            ph = ",".join("?" for _ in self.codes)
             self._log_to_enc = {r["boss"]: r["encounter_id"]
                                 for r in self.be.con.execute(
-                                    "SELECT DISTINCT boss, encounter_id FROM pull "
-                                    "WHERE report=?", (self.code,))}
+                                    f"SELECT DISTINCT boss, encounter_id FROM pull "
+                                    f"WHERE report IN ({ph})", self.codes)}
         enc = self._log_to_enc.get(log_name)
         return self.boss_name(enc, log_name) if enc else log_name
 

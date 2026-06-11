@@ -8,8 +8,9 @@ re-runs are free (no API points), interrupted runs resume at no cost.
 Credentials: env WCL_CLIENT_ID / WCL_CLIENT_SECRET, or a `.env` file (one
 KEY=value per line) in the workdir or next to the scripts. NEVER commit them.
 
-Workdir layout (one per raid night, created by `ingest.py init`):
-    <workdir>/raid.json     config: report code, guild, lang, host, ...
+Workdir layout (one per raid ID — one or several nights/reports — created by
+`ingest.py init`):
+    <workdir>/raid.json     config: report code(s), guild, lang, host, ...
     <workdir>/raid.db       sqlite (cache + all extracted tables)
     <workdir>/digests/      analysis outputs (analyze.py)
     <workdir>/refs/         zone mechanics ref + spec KPIs (bootstrap)
@@ -71,6 +72,14 @@ def load_config(workdir):
 def save_config(workdir, cfg):
     with open(os.path.join(workdir, "raid.json"), "w", encoding="utf-8") as f:
         json.dump(cfg, f, ensure_ascii=False, indent=1)
+
+
+def report_codes(cfg):
+    """Report codes of this raid ID, chronological. Multi-report = one lockout
+    split over several nights, consolidated into ONE debrief (cfg "reports").
+    Single-report configs (cfg "report") keep working unchanged."""
+    codes = cfg.get("reports") or ([cfg["report"]] if cfg.get("report") else [])
+    return list(codes)
 
 
 # -------------------------------------------------------------------- backend
