@@ -128,7 +128,7 @@ Bundled, validated on real top parses:
 
 | Zone | Mechanics ref | Localized names | Validated traps |
 |---|---|---|---|
-| Siege of Orgrimmar (10) | 11/14 bosses classified, sourced from DBM lua + sim cross-checks | fr | 11 measured trap validations |
+| Siege of Orgrimmar | 14/14 bosses classified, sourced from DBM lua + sim cross-checks + real 10/25-player logs | fr | 11 measured trap validations |
 
 Any other MoP Classic zone: the skill bootstraps the references itself
 (documented, source-cited procedure: DBM warning-type classification + sim
