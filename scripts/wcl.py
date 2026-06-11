@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+"""Shared module: WCL API v2 client (OAuth + GraphQL + sqlite response cache),
+sqlite backend, workdir config. Stdlib only (no pip install).
+
+Every WCL response is cached in `wcl_raw` keyed by sha256(query+variables):
+re-runs are free (no API points), interrupted runs resume at no cost.
+
+Credentials: env WCL_CLIENT_ID / WCL_CLIENT_SECRET, or a `.env` file (one
+KEY=value per line) in the workdir or next to the scripts. NEVER commit them.
+
+Workdir layout (one per raid night, created by `ingest.py init`):
+    <workdir>/raid.json     config: report code, guild, lang, host, ...
+    <workdir>/raid.db       sqlite (cache + all extracted tables)
+    <workdir>/digests/      analysis outputs (analyze.py)
+    <workdir>/refs/         zone mechanics ref + spec KPIs (bootstrap)
+    <workdir>/content/      written verdicts (HTML fragments, by the skill)
+    <workdir>/pages/        generated static report (pages.py)
+"""
+import base64
+import hashlib
+import json
+import os
+import sqlite3
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timezone
+
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+SCHEMA = os.path.join(SCRIPTS_DIR, "schema.sql")
+
+# Classic difficulty ids (MoP: 3=Normal, 4=Heroic).
+DIFF_NAME = {1: "LFR", 3: "N", 4: "H", 5: "M"}
+
+
+# ----------------------------------------------------------------- env/config
+
+def load_env(workdir=None):
+    """Load .env files (workdir first, then scripts dir). Existing env wins."""
+    paths = []
+    if workdir:
+        paths.append(os.path.join(workdir, ".env"))
+    paths.append(os.path.join(os.path.dirname(SCRIPTS_DIR), ".env"))
+    paths.append(os.path.join(SCRIPTS_DIR, ".env"))
+    for p in paths:
+        if not os.path.exists(p):
+            continue
+        with open(p, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, _, v = line.partition("=")
+                    os.environ.setdefault(k.strip(), v.strip())
+
+
+def workdir_from_args(args):
+    wd = getattr(args, "workdir", None) or os.environ.get("RAID_WORKDIR") or os.getcwd()
+    return os.path.abspath(wd)
+
+
+def load_config(workdir):
+    p = os.path.join(workdir, "raid.json")
+    if not os.path.exists(p):
+        sys.exit(f"missing {p} — run `python3 ingest.py init` first")
+    with open(p, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_config(workdir, cfg):
+    with open(os.path.join(workdir, "raid.json"), "w", encoding="utf-8") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=1)
+
+
+# -------------------------------------------------------------------- backend
+
+class Backend:
+    """Sqlite store: WCL response cache + extracted tables (schema.sql)."""
+
+    def __init__(self, workdir):
+        os.makedirs(workdir, exist_ok=True)
+        self.workdir = workdir
+        self.con = sqlite3.connect(os.path.join(workdir, "raid.db"))
+        self.con.row_factory = sqlite3.Row
+        self.con.execute("PRAGMA journal_mode=WAL")
+        with open(SCHEMA, encoding="utf-8") as f:
+            self.con.executescript(f.read())
+
+    def upsert(self, table, row, pk):
+        cols = list(row.keys())
+        ph = ",".join("?" for _ in cols)
+        setc = ",".join(f"{c}=excluded.{c}" for c in cols if c not in pk)
+        if setc:
+            sql = (f"INSERT INTO {table} ({','.join(cols)}) VALUES ({ph}) "
+                   f"ON CONFLICT ({','.join(pk)}) DO UPDATE SET {setc}")
+        else:
+            # All-PK table: an empty DO UPDATE SET is invalid SQL.
+            sql = f"INSERT OR IGNORE INTO {table} ({','.join(cols)}) VALUES ({ph})"
+        self.con.execute(sql, [row[c] for c in cols])
+
+    def commit(self):
+        self.con.commit()
+
+    def count(self, table):
+        return self.con.execute(f"SELECT COUNT(*) c FROM {table}").fetchone()["c"]
+
+    def cache_get(self, key):
+        r = self.con.execute("SELECT response FROM wcl_raw WHERE query_hash=?",
+                             (key,)).fetchone()
+        return r["response"] if r else None
+
+    def done(self, code, fid, what):
+        return self.con.execute(
+            "SELECT 1 FROM done_marker WHERE report=? AND fight_id=? AND what=?",
+            (code, fid, what)).fetchone() is not None
+
+    def mark(self, code, fid, what):
+        self.con.execute("INSERT OR IGNORE INTO done_marker VALUES (?,?,?)",
+                         (code, fid, what))
+        self.commit()
+
+
+# ----------------------------------------------------------------- WCL client
+
+_TOKEN = None
+_LAST = [0.0]
+THROTTLE_S = 0.20   # gentle spacing between live calls
+
+OAUTH_URL = "https://www.warcraftlogs.com/oauth/token"
+# MoP Classic logs live on the classic endpoint; the www OAuth token works here.
+API_URL = "https://classic.warcraftlogs.com/api/v2/client"
+
+
+def _token():
+    global _TOKEN
+    if _TOKEN:
+        return _TOKEN
+    cid = os.environ.get("WCL_CLIENT_ID")
+    secret = os.environ.get("WCL_CLIENT_SECRET")
+    if not cid or not secret:
+        sys.exit("Set WCL_CLIENT_ID / WCL_CLIENT_SECRET (env or .env file — "
+                 "see README, never commit them).")
+    data = urllib.parse.urlencode({"grant_type": "client_credentials"}).encode()
+    req = urllib.request.Request(OAUTH_URL, data=data)
+    req.add_header("Authorization", "Basic " +
+                   base64.b64encode(f"{cid}:{secret}".encode()).decode())
+    with urllib.request.urlopen(req, timeout=30) as r:
+        _TOKEN = json.load(r)["access_token"]
+    return _TOKEN
+
+
+def _live_gql(query, variables):
+    body = json.dumps({"query": query, "variables": variables}).encode()
+    for attempt in range(4):
+        dt = time.monotonic() - _LAST[0]
+        if dt < THROTTLE_S:
+            time.sleep(THROTTLE_S - dt)
+        req = urllib.request.Request(API_URL, data=body)
+        req.add_header("Authorization", "Bearer " + _token())
+        req.add_header("Content-Type", "application/json")
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                _LAST[0] = time.monotonic()
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            _LAST[0] = time.monotonic()
+            if e.code in (429, 502, 503):
+                time.sleep(2 ** attempt)
+                continue
+            try:
+                return json.load(e)
+            except Exception:
+                return {"errors": [{"http": e.code}]}
+    return {"errors": [{"throttled": True}]}
+
+
+def gql(be, query, **variables):
+    """Cached GraphQL: parsed JSON; live-fetches + stores on cache miss."""
+    key = hashlib.sha256((query + json.dumps(variables, sort_keys=True)).encode()).hexdigest()
+    hit = be.cache_get(key)
+    if hit:
+        return json.loads(hit)
+    resp = _live_gql(query, variables)
+    if "data" in resp and resp.get("data"):    # only cache real successes
+        be.upsert("wcl_raw", {
+            "query_hash": key, "query": query,
+            "variables": json.dumps(variables, sort_keys=True),
+            "response": json.dumps(resp),
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }, ["query_hash"])
+        be.commit()
+    return resp
+
+
+def unwrap(resp, *path):
+    cur = resp.get("data") if isinstance(resp, dict) else None
+    for p in path:
+        if cur is None:
+            return None
+        cur = cur.get(p) if isinstance(cur, dict) else None
+    return cur
+
+
+def json_field(v):
+    return json.loads(v) if isinstance(v, str) else v
+
+
+def quota():
+    r = _live_gql("{ rateLimitData { limitPerHour pointsSpentThisHour pointsResetIn } }", {})
+    return unwrap(r, "rateLimitData") or {}
+
+
+# ----------------------------------------------------------------- fetchers
+
+def fetch_events(be, code, fid, fs, fe, data_type, extra=""):
+    """All events of a type for one fight, paginated, WITH dedup.
+
+    Pagination boundaries (nextPageTimestamp) duplicate events (x1.1-2 volume):
+    dedup on a wide key is mandatory.
+
+    `extra` = raw clause, e.g. ',hostilityType:Enemies' or ',sourceID:12' or
+    ',filterExpression:"ability.id IN (1,2)"'.
+
+    KNOWN SILENT FAILURE (classic API): `dataType:DamageTaken` combined with
+    `targetID:X` returns ZERO events with no error. Fetch FULL and filter
+    code-side instead. Always validate an extraction by an EXPECTED POSITIVE
+    (a tank with zero damage taken = alarm), never by the absence of error.
+    """
+    out, seen, start = [], set(), fs
+    while start is not None:
+        q = ('{ reportData { report(code:"%s"){ events(startTime:%d,endTime:%d,'
+             'fightIDs:[%d],dataType:%s%s,limit:10000){ data nextPageTimestamp } } } }'
+             % (code, start, fe, fid, data_type, extra))
+        ev = unwrap(gql(be, q), "reportData", "report", "events")
+        if not ev:
+            break
+        for e in json_field(ev.get("data")) or []:
+            k = (e.get("timestamp"), e.get("type"), e.get("sourceID"),
+                 e.get("targetID"), e.get("abilityGameID"), e.get("amount"),
+                 e.get("stack"), e.get("targetInstance"))
+            if k in seen:
+                continue
+            seen.add(k)
+            out.append(e)
+        start = ev.get("nextPageTimestamp")
+    return out
+
+
+def fetch_table(be, code, fid, fs, fe, data_type, extra=""):
+    q = ('{ reportData { report(code:"%s"){ table(startTime:%d,endTime:%d,'
+         'fightIDs:[%d],dataType:%s%s) } } }' % (code, fs, fe, fid, data_type, extra))
+    return json_field(unwrap(gql(be, q), "reportData", "report", "table")) or {}
+
+
+def fetch_graph(be, code, fid, fs, fe, data_type, extra=""):
+    """Bucketed per-player series (+ 'Total'). dataType Resources with
+    sourceID:X,abilityID:100 = mana % timeline for one actor. ~1 pt/request."""
+    q = ('{ reportData { report(code:"%s"){ graph(startTime:%d,endTime:%d,'
+         'fightIDs:[%d],dataType:%s%s) } } }' % (code, fs, fe, fid, data_type, extra))
+    g = json_field(unwrap(gql(be, q), "reportData", "report", "graph")) or {}
+    return g.get("data", g)
+
+
+def report_meta(be, code):
+    """Report header: title, zone (id+name), bounds. Zone is AUTO-DETECTED here —
+    never ask the user for it."""
+    q = ('{ reportData { report(code:"%s"){ title startTime endTime '
+         'zone { id name } } } }' % code)
+    rep = unwrap(gql(be, q), "reportData", "report")
+    if not rep:
+        sys.exit(f"report not found: {code}")
+    return rep
+
+
+def zone_encounters(be, zone_id):
+    """(id, name) list for a zone id."""
+    encs = unwrap(gql(be, '{ worldData { zone(id:%d){ encounters { id name } } } }'
+                      % zone_id), "worldData", "zone", "encounters")
+    return encs or []
+
+
+def ingest_actors(be, code):
+    """masterData.actors -> actor_name table (resolves NPC + pet target names)."""
+    q = ('{ reportData { report(code:"%s"){ masterData { actors '
+         '{ id name type subType } } } } }' % code)
+    actors = unwrap(gql(be, q), "reportData", "report", "masterData", "actors") or []
+    for a in actors:
+        be.upsert("actor_name", {
+            "report": code, "actor_id": a.get("id"), "name": a.get("name"),
+            "type": a.get("type"), "sub_type": a.get("subType"),
+        }, ["report", "actor_id"])
+    be.commit()
+    return {a.get("id"): a.get("name") for a in actors}
+
+
+def rankings_reports(be, enc_id, metric, diff, size, topn,
+                     class_name=None, spec_name=None):
+    """Top (code, fightID) pairs from characterRankings, deduped."""
+    cs = ""
+    if class_name and spec_name:
+        cs = ', className:"%s", specName:"%s"' % (class_name, spec_name)
+    q = ('{ worldData { encounter(id:%d){ characterRankings(metric:%s, '
+         'difficulty:%d, size:%d%s) } } }' % (enc_id, metric, diff, size, cs))
+    cr = json_field(unwrap(gql(be, q), "worldData", "encounter",
+                           "characterRankings")) or {}
+    out, seen = [], set()
+    for e in cr.get("rankings", []):
+        rep = e.get("report", {})
+        ck, fid = rep.get("code"), rep.get("fightID")
+        if ck and (ck, fid) not in seen:
+            seen.add((ck, fid))
+            out.append((ck, fid))
+        if len(out) >= topn:
+            break
+    return out
+
+
+def fmt_dur(s):
+    return f"{int(s // 60)}:{int(s % 60):02d}"
