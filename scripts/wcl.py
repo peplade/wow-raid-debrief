@@ -93,6 +93,9 @@ class Backend:
         self.con = sqlite3.connect(os.path.join(workdir, "raid.db"))
         self.con.row_factory = sqlite3.Row
         self.con.execute("PRAGMA journal_mode=WAL")
+        # WAL = single writer: concurrent workers (sharded top-detail,
+        # progress samplers) must WAIT, not crash with 'database is locked'.
+        self.con.execute("PRAGMA busy_timeout=30000")
         with open(SCHEMA, encoding="utf-8") as f:
             self.con.executescript(f.read())
 

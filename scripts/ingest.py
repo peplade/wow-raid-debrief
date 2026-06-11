@@ -757,6 +757,11 @@ def cmd_top_detail(be, cfg, args):
           WHERE p.encounter_id=tp.encounter_id AND p.difficulty=tp.difficulty
             AND (c.class || '-' || c.spec) = tp.spec_key AND p.report IN ({ph}))
         ORDER BY tp.encounter_id, tp.spec_key, tp.rank""", codes)]
+    shard = getattr(args, "shard", "") or ""
+    if shard:
+        k, m = (int(x) for x in shard.split("/"))
+        rows = [r for i, r in enumerate(rows) if i % m == k - 1]
+        print(f"shard {k}/{m}: {len(rows)} top parses")
     print(f"{len(rows)} top parses to detail (played specs only)")
     for tp in rows:
         rcode, rfid = tp["report"], tp["fight_id"]
@@ -1055,9 +1060,14 @@ def main():
     pa = sub.add_parser("add-report")
     pa.add_argument("--report", action="append", required=True,
                     help="report code(s) to append to this workdir's raid ID")
-    for name in ("session", "deep", "extras", "trash", "tops", "top-detail",
+    for name in ("session", "deep", "extras", "trash", "tops",
                  "status", "quota", "progress", "all", "infer-avoidable"):
         sub.add_parser(name)
+    pt = sub.add_parser("top-detail")
+    pt.add_argument("--shard", default="",
+                    help="k/m: process every m-th parse starting at k — run "
+                         "m workers in parallel on big rosters (idempotent, "
+                         "done-marker guarded)")
     pb = sub.add_parser("benchmark")
     pb.add_argument("--topn", type=int, default=10)
     args = ap.parse_args()
