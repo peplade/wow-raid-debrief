@@ -170,9 +170,26 @@ def _token():
     req = urllib.request.Request(OAUTH_URL, data=data)
     req.add_header("Authorization", "Basic " +
                    base64.b64encode(f"{cid}:{secret}".encode()).decode())
-    with urllib.request.urlopen(req, timeout=30) as r:
-        _TOKEN = json.load(r)["access_token"]
-    return _TOKEN
+    # OAuth goes through the same gateway as the API: it 504s during WCL
+    # incidents too. Retry transients — a worker must not die at boot.
+    last_err = None
+    for attempt in range(6):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                _TOKEN = json.load(r)["access_token"]
+            return _TOKEN
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                sys.exit("WCL OAuth refused (401/403): check WCL_CLIENT_ID / "
+                         "WCL_CLIENT_SECRET")
+            last_err = e
+        except (urllib.error.URLError, OSError, json.JSONDecodeError) as e:
+            last_err = e
+        wait = min(60, 5 * 2 ** attempt)
+        print(f"[wcl] OAuth transient ({last_err}) — retry in {wait}s "
+              f"({attempt + 1}/6)", flush=True)
+        time.sleep(wait)
+    sys.exit(f"WCL OAuth failed after 6 attempts: {last_err}")
 
 
 def _post_gql(query, variables):
