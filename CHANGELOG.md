@@ -27,6 +27,23 @@ Orgrimmar ID split over two nights (two WCL reports).
   player identity is the NAME).
 - `status` gate runs every per-report check per night.
 
+### Hardened on the first real 25-player two-night run (534 top parses)
+- `top-detail --shard k/m`: parallel workers on big rosters (idempotent via
+  done markers); `progress` command (live %, machine-parseable, ETA-able).
+- Commit discipline: commit after every upsert block BEFORE the next network
+  fetch — an open implicit transaction held the WAL write lock through API
+  latency and starved sibling workers (crashed twice despite busy_timeout
+  30s then 120s). busy_timeout kept at 120s as belt-and-suspenders.
+- WCL 504 + Cloudflare 52x now retried as transients (slices were lost
+  loudly but un-retried); OAuth gets the same retry (workers died at boot
+  during a real WCL outage — the token endpoint 504s too).
+- Player cards no longer gated on spec-KPI coverage: every roster player
+  renders (verdict, deaths, bench, avoidable); KPI tables simply absent for
+  uncovered specs. 18/30 cards were silently dropped before this fix.
+- SoO mechanics ref completed to 14/14 bosses (Blackfuse, Paragons, Garrosh
+  — engraved 25N findings: MC friendly fire IS active in 25N, Magnetic
+  Crush present in 25N, sliding sawblades during Crush windows).
+
 ### Compatibility
 - Single-report workdirs unchanged: regression-checked vs v1.0.0 on a real
   night — 20/20 digests identical (modulo additive `report`/`night` keys),

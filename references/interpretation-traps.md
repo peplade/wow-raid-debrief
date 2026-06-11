@@ -92,6 +92,11 @@ trail proving the gate ran; it stays in the workdir, unpublished.
   second): collective pattern = mechanic or call, not 10 individual fails.
 - A "fail" by the most experienced player on a mechanic they know: raise the
   prior that it is a trap, double-check classes A-D.
+- A total that grows with time alive (avoidable hits, debuff ticks summed
+  over wipes): SURVIVOR BIAS — the players who live longest eat the most.
+  Normalize per kill-pull or per minute alive before ranking; a live run's
+  "worst Desecrated offenders" (69 and 54 hits) were BELOW the top-parse
+  average once restricted to the kill (11 and 10 vs tops' 12.98).
 
 ## Zone-validated instances
 
