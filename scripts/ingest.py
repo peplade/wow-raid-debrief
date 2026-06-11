@@ -989,6 +989,44 @@ def cmd_quota(be, cfg, args):
     print(json.dumps(quota(), indent=1))
 
 
+def cmd_progress(be, cfg, args):
+    """Live progress of a running `all` (read-only, run from another shell).
+    Weighted units: session=1, deep=5, extras=2 per pull; top-detail=1.5 per
+    parse (the long tail on big rosters). Last line is machine-parseable —
+    sample it every few minutes and derive rate/ETA from the delta. Early %
+    overshoots slightly until discovery (pull list, rankings) is complete."""
+    codes = report_codes(cfg)
+    ph = ",".join("?" for _ in codes)
+    done_u = tot_u = 0.0
+    for night, code in enumerate(codes, 1):
+        n_pulls = be.con.execute("SELECT COUNT(*) c FROM pull WHERE report=?",
+                                 (code,)).fetchone()["c"]
+        for what, w, label in (("session", 1, "session"), ("pull_deep", 5, "deep"),
+                               ("extras", 2, "extras")):
+            n = be.con.execute(
+                "SELECT COUNT(*) c FROM done_marker WHERE report=? AND what=?",
+                (code, what)).fetchone()["c"]
+            tot_u += w * n_pulls
+            done_u += w * min(n, n_pulls)
+            print(f"  night {night} {label:9} {n}/{n_pulls}")
+    n_tops = be.con.execute(f"""
+        SELECT COUNT(*) c FROM top_parse tp WHERE EXISTS (
+          SELECT 1 FROM pull p JOIN composition c2
+            ON c2.report=p.report AND c2.fight_id=p.fight_id
+          WHERE p.encounter_id=tp.encounter_id AND p.difficulty=tp.difficulty
+            AND (c2.class || '-' || c2.spec) = tp.spec_key
+            AND p.report IN ({ph}))""", codes).fetchone()["c"]
+    n_topd = be.con.execute(
+        "SELECT COUNT(*) c FROM done_marker WHERE what LIKE 'top:%'").fetchone()["c"]
+    if n_tops:
+        tot_u += 1.5 * n_tops
+        done_u += 1.5 * min(n_topd, n_tops)
+        print(f"  top-detail        {n_topd}/{n_tops}")
+    pct = 100.0 * done_u / tot_u if tot_u else 0.0
+    print(f"PROGRESS pct={pct:.1f} units={done_u:.0f}/{tot_u:.0f} "
+          f"top_detail={n_topd}/{n_tops}")
+
+
 def cmd_all(be, cfg, args):
     """Full extraction. Quota is self-managed at the client level (wcl.py):
     rateLimitData polled every ~150 live calls, auto-pause through the hourly
@@ -1018,7 +1056,7 @@ def main():
     pa.add_argument("--report", action="append", required=True,
                     help="report code(s) to append to this workdir's raid ID")
     for name in ("session", "deep", "extras", "trash", "tops", "top-detail",
-                 "status", "quota", "all", "infer-avoidable"):
+                 "status", "quota", "progress", "all", "infer-avoidable"):
         sub.add_parser(name)
     pb = sub.add_parser("benchmark")
     pb.add_argument("--topn", type=int, default=10)
@@ -1034,8 +1072,8 @@ def main():
     cfg = load_config(wd)
     {"session": cmd_session, "deep": cmd_deep, "extras": cmd_extras,
      "trash": cmd_trash, "tops": cmd_tops, "top-detail": cmd_top_detail,
-     "status": cmd_status, "quota": cmd_quota, "all": cmd_all,
-     "add-report": cmd_add_report, "benchmark": cmd_benchmark,
+     "status": cmd_status, "quota": cmd_quota, "progress": cmd_progress,
+     "all": cmd_all, "add-report": cmd_add_report, "benchmark": cmd_benchmark,
      "infer-avoidable": cmd_infer_avoidable}[args.cmd](be, cfg, args)
 
 
