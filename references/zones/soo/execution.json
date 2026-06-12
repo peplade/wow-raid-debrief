@@ -1,0 +1,55 @@
+{
+  "_comment": "Zone config for scripts/execution.py and scripts/dossiers.py (Siege of Orgrimmar). Boss keys = WCL fight names. All ids verified on real 25H logs (2026-06). signature_casts feed the per-pull dossier chronology; adds feed the switch-latency engine; ground_mechanics feed the AoE-squat engine; focus_bosses feed council focus-conformity; npc_*_targets feed friendly/priority NPC participation; trial/prison auras feed time-in-realm and time-to-free.",
+  "signature_casts": {
+    "Fallen Protectors": {"143962": "Inferno Strike (shared soak!)",
+                          "143491": "Calamity",
+                          "143546": "Dark Meditation"},
+    "Norushen": {"145227": "Blind Hatred", "144649": "Hurl Corruption"},
+    "Sha of Pride": {"144400": "Swelling Pride", "145215": "Banishment",
+                     "144832": "Unleashed"},
+    "Immerseus": {"143574": "Swelling Corruption"}
+  },
+  "adds": {
+    "Fallen Protectors": ["Embodied Misery", "Embodied Sorrow",
+                          "Embodied Gloom", "Embodied Anguish",
+                          "Embodied Desperation", "Embodied Despair",
+                          "Despair Spawn", "Desperation Spawn"],
+    "Norushen": ["Manifestation of Corruption", "Essence of Corruption"],
+    "Sha of Pride": ["Reflection", "Manifestation of Pride",
+                     "Corrupted Fragment"],
+    "Immerseus": ["Sha Puddle", "Congealed Sha"]
+  },
+  "ground_mechanics": {
+    "Fallen Protectors": {"144367": "Noxious Poison",
+                          "144357": "Defiled Ground",
+                          "143023": "Corrupted Brew"},
+    "Norushen": {"145227": "Blind Hatred"},
+    "Sha of Pride": {"144911": "Bursting Pride",
+                     "147388": "Collapsing Rift"},
+    "Immerseus": {"143460": "Sha Pool", "145377": "Erupting Water"}
+  },
+  "interrupt_names": {"143423": "Sha Sear", "143958": "Corruption Shock",
+                      "145064": "Expel Corruption",
+                      "144649": "Hurl Corruption",
+                      "144379": "Mocking Blast",
+                      "144482": "Tear Reality"},
+  "focus_bosses": {
+    "Fallen Protectors": ["Rook Stonetoe", "Sun Tenderheart", "He Softfoot"]
+  },
+  "npc_dps_targets": {
+    "Immerseus": ["Sha Puddle", "Congealed Sha"]
+  },
+  "npc_heal_targets": {
+    "Immerseus": ["Contaminated Puddle", "Lesser Contaminated Puddle"]
+  },
+  "trial_auras": {
+    "Norushen": [144849, 144850, 144851]
+  },
+  "prison_auras": {
+    "Sha of Pride": [144574, 144636, 144683, 144684, 144615]
+  },
+  "not_loggable": [
+    "Norushen orb soaks and the corruption power bar (resource gains leave no combat-log trace) — say so, do not proxy",
+    "Sha of Pride prison FREERS (pressure plates) — only time-to-free is measurable"
+  ]
+}

@@ -47,6 +47,20 @@ sense for the role it targeted. The rebuild rule that fixed it:
 10. **Evictions/assignments first.** On any boss with an eviction phase or
     asymmetric assignment (belt teams, realm phases, soak rosters), identify
     who was assigned BEFORE comparing anyone's numbers.
+11. **The deliverable is nominative execution, not aggregates.** A raid lead
+    asks "who kicks their assignment, who switches to the right target on
+    time, who camps the ground AoE, who had a defensive available and sat on
+    it" — per pull, with timings. Aggregate tables (deaths per mechanic, CD
+    totals) are inputs to that answer, never the answer. Field-tested: an
+    aggregate-only delivery was rejected twice on the same night's CR.
+12. **CD availability runs on the ABSOLUTE night timeline.** Repulls are
+    ~2 min; a raid CD burned late in pull N is still down at the next pull
+    start. "They had Barrier available" must survive that check (durations
+    indicative; talents are not in the log — say so when rendering).
+13. **Name what the log cannot see.** Resource-bar gains (orb soaks,
+    corruption levels) and world interactions (pressure plates) leave no
+    event. State "not measurable from logs" explicitly; a plausible proxy
+    presented as measurement is a false verdict waiting to happen.
 
 ## Extraction design (API economy)
 

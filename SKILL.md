@@ -137,11 +137,34 @@ GATE: `ingest.py status` now also shows refs PASS; and for each roster spec,
 
 ```bash
 python3 "$SKILL/scripts/analyze.py" all         # writes digests/analysis/*.json
+python3 "$SKILL/scripts/dossiers.py"            # per-pull dossiers + CD availability
+python3 "$SKILL/scripts/execution.py"           # WHO kicks/switches/camps (zone config)
+python3 "$SKILL/scripts/pacing.py"              # combat vs idle, repull discipline
+python3 "$SKILL/scripts/percentiles.py"         # per-player kill percentiles (~2 calls/report)
+# week-over-week (only when earlier debrief workdirs exist for this guild):
+python3 "$SKILL/scripts/evolution.py" <wd_week1> ... <this_workdir>
 ```
 
 GATE: every module printed output and `digests/analysis/` contains pacing,
-deaths, cdmap, heals, dispels, avoidable, execution, bench, boss_*.json.
+deaths, cdmap, heals, dispels, avoidable, execution, bench, boss_*.json,
+PLUS dossiers.json, execution_nominative.json, pacing.json (and
+evolution.json + gear_evolution.json on multi-week runs).
 A SKIPPED module = its precondition failed; go back, do not shrug it off.
+
+The nominative layer is NOT optional. A debrief that stops at aggregates
+(deaths per mechanic, raid-wide CD counts) without the per-pull dossiers
+(chronology + which CDs were AVAILABLE and unused at each critical moment)
+and the per-player execution tables (who kicks, who switches on adds and how
+fast, who camps ground AoE, who carries soaks) will be rejected by any raid
+lead who knows the fights — field-tested twice on the same delivery.
+`execution.py` needs `references/zones/<zone>/execution.json` (bundled for
+SoO; for a new zone, build it during stage 3 — see zone-bootstrap.md).
+Honesty rule: some things are NOT in the combat log (resource-bar gains such
+as orb soaks, who clicks a pressure plate). Say "not measurable from logs"
+instead of proxying — the zone execution.json lists known cases under
+`not_loggable`. Rendering fairness: melee switch latency includes travel
+time (separate melee from ranged); tank ground-AoE ticks read as boss
+placement, not personal fails; soak-duty deaths are collective.
 
 Sanity pass (5 min, catches extraction/ref bugs before they poison verdicts):
 - uptimes ≤ 100 and not absurdly low for the spec's signature DoT,

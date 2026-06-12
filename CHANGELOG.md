@@ -3,6 +3,41 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.0] — 2026-06-12
+
+The two "candidate" engines from 1.1.1 are now SHIPPED as scripts, plus the
+nominative-execution layer — all field-validated on a real 25H progress
+night (outputs cross-checked identical to the hand-driven originals).
+
+### Added
+- `scripts/dossiers.py` — per-pull dossiers: merged chronology (deaths,
+  signature enemy casts, raid CDs, deduped battle-rezzes, lust), critical
+  moments (first death + death clusters >=3/10 s), and for each: CDs posted,
+  **CDs available-but-not-posted on the ABSOLUTE night timeline** (a CD
+  burned late in pull N is still down at the repull), victims with a
+  personal defensive in reserve; inter-pull fixed/repeated delta.
+- `scripts/execution.py` — nominative execution per boss, driven by
+  `references/zones/<zone>/execution.json`: who kicks (event-level) + casts
+  that went through (begun/completed), add-switch latency per player
+  (spawn-window segmentation; melee rendered separately), AoE-squat runs
+  (>=3 consecutive ticks; tanks separately), council focus-conformity on
+  the kill, friendly/priority-NPC participation (dps + heal), trial
+  entries, prison time-to-free, personal-defensive counts.
+- `scripts/pacing.py` — combat vs idle, repull discipline (median), longest
+  gaps, full segment list for gantt rendering; `--compare` for prior weeks.
+- `scripts/percentiles.py` — per-player WCL kill percentiles
+  (report.rankings, dps+hps), THE cross-difficulty comparable.
+- `scripts/evolution.py` — week-over-week dataset: median percentile
+  trajectory, raid stats, roster moves, gear/ilvl diff via combatantinfo
+  (localized item names, `nether.wowhead.com/mop-classic/<lang>/tooltip`).
+- `references/zones/soo/execution.json` — SoO config: signature casts,
+  adds, ground mechanics, interruptibles, council focus, NPC targets,
+  trial/prison auras, and the `not_loggable` honesty list.
+- SKILL.md stage 4 + methodology invariants 11-13: the nominative layer is
+  part of the standard CR (aggregate-only delivery was rejected twice in
+  field use); CD availability on the absolute timeline; name what the log
+  cannot see.
+
 ## [1.1.1] — 2026-06-12
 
 Lessons backported from a real 25-player Heroic PROGRESS night (3 first
