@@ -3,6 +3,35 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.1.1] — 2026-06-12
+
+Lessons backported from a real 25-player Heroic PROGRESS night (3 first
+kills + a wall, 23 wipes, 611 deaths) analyzed with the ingest scripts but a
+hand-driven analysis layer (wipe forensics, learning curves, week-over-week
+evolution).
+
+### Added
+- `references/zones/soo/traps.md`: 4 measured rows — Inferno Strike is
+  SHARED damage (deaths = soak headcount, collective), Norushen berserk
+  deaths = DPS-check verdict, Sha HM Banishment realm lethality (74% on a
+  learning night) = execution-drill finding not a heal fault, Sha HM
+  first-Swelling wipes = check raid-CD count before blaming heals.
+- `references/zones/soo/mechanics_ref.json`: 14 measured HM mechanics added
+  (FP Desperate-Measures kit, Norushen berserk/interrupts, Sha HM rifts /
+  Ethereal Corruption / Bursting Pride, Immerseus pools) with two new
+  avoidability classes: `soak` (shared damage — dying in an undersized soak
+  is collective) and `execution` (mechanic drill, e.g. Banishment realm).
+- `references/wcl-api-gotchas.md`: composition table contains top-parse
+  combatants (always filter own reports), deep_graph pointStart is absolute
+  report ms, Norushen-Test false-positive in the DamageTaken integrity
+  check, working MoP-Classic wowhead tooltip endpoint (spells AND items).
+
+### Candidate (not yet in scripts/)
+- Report-rankings percentile fetch (per-player per-kill, comparable across
+  difficulties) + week-over-week evolution page (ilvl/gear via combatantinfo
+  diff, median percentile trajectory, roster moves) — proven on a real
+  2-week case; to be ported into the public scripts on next iteration.
+
 ## [1.1.0] — 2026-06-11
 
 Multi-night raid IDs: one lockout cleared over several nights = ONE

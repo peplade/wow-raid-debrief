@@ -48,6 +48,13 @@
     "target": "all",
     "source_ref": "p6_profiles.go L45-48 (fold stream)",
     "dbm_status": "absent de DBM-MoP (grep clone complet : aucun lua SoO ne référence l'ID)"
+   },
+   "143460": {
+    "name": "Sha Pool",
+    "class": "avoidable",
+    "how": "pool: step out",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
    }
   },
   "notes_hm": "10H : plus de puddles + Swelling Corruption (143574) plus dense (spec L536/L544) ; canal Sha Pool 143460 HM-only (p6_profiles.go L55/L63 : 54.1k DTPS raid 10H) ; les Contaminated Puddles frappent en mêlée en HM (2e source Melee loggée 48.8k DTPS 10H — p6_profiles.go L46-48) ; HP effective 10H 320M vs 214M 10N (sous-comptée, fight add-centric — spec §HP L798).",
@@ -110,6 +117,48 @@
     "how": "DoT ciblé de He Softfoot : DBM l'annonce aux heals (TargetNoFilterAnnounce filtrée Healer + timer CD 29s HEALER_ICON, resserré ~20s en HM), aucune directive d'évitement ni de dispel — charge heal sur les porteurs",
     "target": "targeted",
     "source_ref": "DBM FallenProtectors.lua:L64 (warnGarrote, filtre Healer) + L76 (timer 29s HEALER_ICON, « heroic 20-26 ») + L238-244 / dbm_soo_timings.md L127 (Garrote 29) / p6_profiles.go L73-74, L88 (fold stream)"
+   },
+   "144367": {
+    "name": "Noxious Poison",
+    "class": "avoidable",
+    "how": "He Softfoot poison pools: step out — 32 deaths across 10/12 pulls measured, the recurring avoidable of the fight",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "143224": {
+    "name": "Instant Poison",
+    "class": "unavoidable",
+    "how": "He melee poison: tank/proximity intake",
+    "target": "tank",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "144357": {
+    "name": "Defiled Ground",
+    "class": "avoidable",
+    "how": "Embodied Misery ground zone: step out",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "143962": {
+    "name": "Inferno Strike",
+    "class": "soak",
+    "how": "SHARED damage (~2.8M 25H) split among players near the target: 5-6 soakers minimum (n=3 -> 895k each = one-shot; n=10 -> 287k). Deaths = collective soak-headcount failure, never individual",
+    "target": "shared",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "143023": {
+    "name": "Corrupted Brew",
+    "class": "avoidable",
+    "how": "Embodied Sorrow lobbed projectiles: avoid impact zone",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "144018": {
+    "name": "Corruption Shock",
+    "class": "reducible",
+    "how": "Embodied Desperation cast: interrupt — hits taken = missed kicks (blame interrupters)",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
    }
   },
   "notes_hm": "HM : mécaniques Sha (Gloom/Misery/Sorrow) plus punitives + Defiled Ground (spec L570/L581) ; HP effective ×2 (510M 10N → 1.03Md 10H — spec L799). 3 boss à tuer quasi simultanément (gate énergie partagé, spec L575) ; mécanique tank annexe : Gouge 143330 (He Softfoot, look-away/stun tank — spec L579) ; Clash 143027 (Rook, charge à esquiver P4 — spec L577).",
@@ -182,6 +231,27 @@
     "target": "all",
     "source_ref": "soo_encounter_spec.md L683 (§6 : Blind Hatred 145226, faisceau, all move, P4) / dbm_soo_timings.md L130 (BlindHatred 30)",
     "note": "la spec porte l'ID 145226 (cast) ; le dégât loggé est 145227"
+   },
+   "145779": {
+    "name": "Quarantine Safety Measures",
+    "class": "unavoidable",
+    "how": "berserk 418 s: deaths = DPS-check verdict (collective)",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "145679": {
+    "name": "Unchecked Corruption",
+    "class": "reducible",
+    "how": "Manifestation cast: interrupt",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "144774": {
+    "name": "Reaching Attack",
+    "class": "unavoidable",
+    "how": "Amalgam long-range attack",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
    }
   },
   "notes_hm": "HM : Corruption plus dure, gestion du realm (épreuve) plus serrée (spec L675) ; aucun kill 10H loggé sur classic (HP estimée ~410M — spec L678/L797). Mécanique P7 centrale : des joueurs partent dans l'épreuve (orbe) pour se purifier → retirés du combat ; la corruption RÉDUIT les dégâts infligés à l'Amalgam, Purified = baseline (spec L123/L141-143). Berserk court : 418s. Adds prioritaires : Manifestation of Corruption à switch (spec L685).",
@@ -254,6 +324,34 @@
     "how": "voir 144636 — même mécanique (emprisonnement P7, dégâts pendant la prison)",
     "target": "targeted",
     "source_ref": "soo_encounter_spec.md L710 (§6 : Corrupted Prison 144574, emprisonnement P6/P7)"
+   },
+   "147198": {
+    "name": "Unstable Corruption",
+    "class": "reducible",
+    "how": "pulse of unclosed HM rifts: close the rifts (fixed assignments) — 30 deaths on a 6-pull learning block measured",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "149031": {
+    "name": "Ethereal Corruption",
+    "class": "execution",
+    "how": "Banishment realm tick: the banished must kill the realm adds to escape — deaths here are an execution-drill finding (74% lethality measured on a learning night)",
+    "target": "banished",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "144911": {
+    "name": "Bursting Pride",
+    "class": "avoidable",
+    "how": "zone under players at 25-49 Pride after Swelling: move out",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+   },
+   "147388": {
+    "name": "Collapsing Rift",
+    "class": "avoidable",
+    "how": "HM rift collapse: step away",
+    "target": "all",
+    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
    }
   },
   "notes_hm": "HM : Banishment 145215 (spec L700, DBM 37.5) — le banni part dans un realm dont le tick (Ethereal Corruption 149031) pesait 72 % du brut 25H, exclu du modèle heal car auto-géré/absorbé (sha_of_pride_ai.go L34-37) ; Pride monte plus vite ; rifts HM = Collapsing Rift 147388 + Unstable Corruption 147198, canal P6 HM-only (35.3k DTPS 10H — sha_of_pride_ai.go L31-32, L120). Mécanique centrale : énergie Pride par joueur → à 100, Overcome (MC, P7 — spec L705). Buff à exploiter : Gift of the Titans → stacker les giftés = Power of the Titans, +15 % dégâts +15 % haste 15s/~25s (spec L122/L136-140, modélisé +12 % DPS Ret). Tank : Wounded Pride 144358 (spec L709, DBM 30). Sol à éviter : Bursting Pride 144911 (spec L711).",

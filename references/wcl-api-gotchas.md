@@ -118,3 +118,22 @@ Read before extraction; re-read when a number looks weird.
   `https://nether.wowhead.com/tooltip/spell/<id>?locale=N` (fr=2, de=3,
   es=6, ru=8...). Cache them; extend the EN->local map by crossing logged
   (id, EN name) pairs with the id->local cache.
+
+## Workdir-DB pitfalls (measured 2026-06-12, 25H progress night)
+
+- The `composition` table also stores combatants of TOP-PARSE reports
+  ingested by `top-detail` (other guilds). Any roster/ilvl query MUST filter
+  `report IN (<own report codes>)` — an unfiltered roster query returned
+  thousands of foreign players.
+- `deep_graph` series (`pointStart`) are in ABSOLUTE report milliseconds,
+  not fight-relative: subtract the pull's `start_time` before computing
+  fight-relative timestamps (a 111 s pull otherwise shows events at ~3200 s).
+- The "every player has DamageTaken on pulls >60 s" integrity check has one
+  legit false-positive: a player evicted into Norushen's Test realm
+  (buff 144849/144850/144851 applied early) for the whole of a short pull
+  takes zero raid damage. Verify the Test aura before treating it as an
+  extraction hole.
+- `nether.wowhead.com/tooltip/{spell,item}/<id>?locale=2` returns "Entity
+  not found" for MoP-Classic-only entities; the working classic endpoint is
+  `https://nether.wowhead.com/mop-classic/fr/tooltip/{spell,item}/<id>`
+  (item names included — useful for gear-evolution displays).
