@@ -137,3 +137,11 @@ Read before extraction; re-read when a number looks weird.
   not found" for MoP-Classic-only entities; the working classic endpoint is
   `https://nether.wowhead.com/mop-classic/fr/tooltip/{spell,item}/<id>`
   (item names included — useful for gear-evolution displays).
+- Resource gains are NOT in the combat log: orb-soaking mechanics that grant
+  a power bar (e.g. Norushen corruption) and the power bar itself leave no
+  aura/cast trace — "who soaked the orb" is unmeasurable from events. Say so
+  explicitly instead of proxying. Trial/realm auras may log applydebuff
+  reliably but removedebuff only sporadically: count entries, don't trust
+  durations.
+- Friendly-NPC healing (e.g. healable add phases) IS in healing events with
+  the NPC as target — per-healer contribution on such adds is measurable.
