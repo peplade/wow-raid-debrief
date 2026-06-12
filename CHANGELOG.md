@@ -31,6 +31,13 @@ evolution).
   difficulties) + week-over-week evolution page (ilvl/gear via combatantinfo
   diff, median percentile trajectory, roster moves) — proven on a real
   2-week case; to be ported into the public scripts on next iteration.
+- Per-wipe dossier engine with "possible reactions at the timing": raid-CD
+  and personal-defensive AVAILABILITY computed on the ABSOLUTE evening
+  timeline (a CD burned late in pull N is still down at the next repull —
+  repulls are ~2 min), critical moments = first death + death clusters
+  (>=3 in 10 s), victims listed with the defensives they had in reserve.
+  Proven killer finding on a learning night: a 12-death cluster at the
+  first Sha HM Swelling with zero raid CD posted and 12 available.
 
 ## [1.1.0] — 2026-06-11
 
