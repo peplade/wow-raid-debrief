@@ -2,7 +2,9 @@
 """Night pacing: combat vs idle time, repull discipline, longest gaps.
 
 Usage: python3 pacing.py [--workdir WD] [--compare WD2 [WD3 ...]]
-Output: <workdir>/digests/analysis/pacing.json
+Output: <workdir>/digests/analysis/pacing_nights.json
+(NOT pacing.json — that name belongs to analyze.py's legacy pacing module
+consumed by pages.py hub bars; both coexist.)
   { "self": {label, nights:[...]}, "compare": [{label, nights:[...]}, ...] }
 
 Per night: span, combat seconds, idle seconds, combat share, repull gaps
@@ -90,7 +92,7 @@ def main():
     out = {"self": week(wd),
            "compare": [week(os.path.abspath(os.path.expanduser(x)))
                        for x in args.compare]}
-    path = os.path.join(wd, "digests", "analysis", "pacing.json")
+    path = os.path.join(wd, "digests", "analysis", "pacing_nights.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as fh:
         json.dump(out, fh, ensure_ascii=False, indent=1)

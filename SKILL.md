@@ -245,6 +245,14 @@ python3 "$SKILL/scripts/pages.py"
 python3 "$SKILL/scripts/probe.py" [--forbid <internal-codenames,...>]
 ```
 
+`pages.py` auto-renders the v1.2 layer when its digests exist (everything
+degrades silently when absent): per-pull dossier blocks (critical moments,
+CDs available-not-posted, defensives in reserve, chronology), the
+"who does what" nominative section per boss, the rich pacing block + night
+gantt on the hub (needs pacing_nights.json), execution lines on player
+cards, and `pages/evolution/index.html` when evolution.json exists
+(also forced via `--only evolution`).
+
 GATE: probe exits 0 (no forbidden tokens, no undrawn canvas, no dead links,
 no empty main). Fix and re-run until clean. Then open 2-3 pages yourself
 (read the HTML) and check: titles coherent, numbers formatted, language

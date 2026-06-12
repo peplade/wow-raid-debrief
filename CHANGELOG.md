@@ -3,6 +3,29 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.1] — 2026-06-12
+
+The v1.2 layer now RENDERS: `scripts/pages_ext.py` plugged into pages.py
+(5 hooks, everything degrades to nothing on pre-1.2 workdirs — verified:
+a legacy workdir regenerates byte-structure-identical pages, 0 probe
+errors).
+
+### Added
+- `scripts/pages_ext.py` (en/fr): per-pull dossier blocks under each pull
+  chart (critical moments with CDs posted / available-NOT-posted / victims
+  with a defensive in reserve, collapsible chronology, fixed-vs-repeated
+  inter-pull delta); per-boss "who does what" section (kicks + casts
+  through, add-switch tables ranged vs melee+tanks, kill add-windows,
+  focus conformity, priority-add damage, friendly-NPC healing, trial
+  entries, prisons time-to-free, defensives); hub rich pacing + night
+  gantt; player-card execution panel; `pages/evolution/index.html`.
+- `pages.py --only evolution`; evolution page auto-built when the digest
+  exists.
+
+### Changed
+- `scripts/pacing.py` output renamed to `pacing_nights.json` (pacing.json
+  belongs to analyze.py's legacy hub module; both coexist).
+
 ## [1.2.0] — 2026-06-12
 
 The two "candidate" engines from 1.1.1 are now SHIPPED as scripts, plus the

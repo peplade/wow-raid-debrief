@@ -38,6 +38,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from wcl import (Backend, load_config, load_env, report_codes, save_config,
                  workdir_from_args)
 from ingest import RAID_CDS
+import pages_ext as ext
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 THEME_DEFAULT = os.path.join(os.path.dirname(SCRIPTS_DIR), "themes", "default.css")
@@ -585,9 +586,11 @@ class Gen:
             note = self.frag("boss", ckey, f"pull_{p['pull']}.html")
             if note:
                 h.append(f"<div class='panel note'>{note}</div>")
+            h.append(ext.pull_dossier_block(self, p, pcode))
             h.append(self.deaths_table(p["deaths"]))
             h.append("</div></article>")
         h.append(self.frag("boss", ckey, "sections.html"))
+        h.append(ext.nominative_section(self, bd.get("boss")))
         h.append(self.auto_avoidable_section(bd.get("boss"), suffix))
         h.append(self.auto_exec_section(bd.get("boss"), suffix))
         h.append(self.auto_heal_section(bd.get("boss"), suffix))
@@ -737,13 +740,14 @@ class Gen:
             f"{wcl_links}</div></header>")
         body = self.frag("hub", "body.html") or (
             "__BOSS_TABLE__ __PLAYERS_LINKS__ __PACING__")
+        rich_html, rich_js = ext.rich_pacing(self)
         body = (body.replace("__BOSS_TABLE__", self.hub_boss_table())
                     .replace("__PLAYERS_LINKS__", self.hub_players_links())
-                    .replace("__PACING__", self.hub_pacing()))
+                    .replace("__PACING__", self.hub_pacing() + rich_html))
         title = (f"{L['raid_report']} — {self.guild} · "
                  f"{self.cfg.get('zone_name') or ''} · {self.night}")
         h = [self.head(title), hero, "<main>", body, "</main>",
-             self.foot(CHART_JS)]
+             self.foot(CHART_JS + rich_js)]
         self.write(os.path.join(self.out_pub, "index.html"), "".join(h))
 
     def page_officers(self):
@@ -871,6 +875,7 @@ class Gen:
                          f"<td class='mut'>{cls_l.get(cl, cl)}</td>"
                          f"<td>{hits}</td><td>{fmt_n(tot)}</td></tr>")
             h.append("</tbody></table></div>")
+        h.append(ext.player_execution_panel(self, name))
         h.append(self.frag("players", name, "sections.html"))
         h.append("</main>")
         h.append(self.foot())
@@ -929,11 +934,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--workdir", default=None)
     ap.add_argument("--only", default=None,
-                    choices=[None, "hub", "boss", "players", "officers"])
+                    choices=[None, "hub", "boss", "players", "officers",
+                             "evolution"])
     args = ap.parse_args()
     wd = workdir_from_args(args)
     load_env(wd)
     g = Gen(wd)
+    if args.only == "evolution":
+        ext.page_evolution(g)
+        print("pages ok ->", os.path.join(wd, "pages", "evolution"))
+        return
     if args.only in (None, "boss"):
         for e in g.encounters():
             g.page_boss(e["encounter_id"], e["difficulty"], e["boss"])
@@ -944,6 +954,8 @@ def main():
         g.page_hub()
     if args.only in (None, "officers"):
         g.page_officers()
+    if g.J("evolution.json"):
+        ext.page_evolution(g)
     print("pages ok ->", g.out_pub)
 
 
