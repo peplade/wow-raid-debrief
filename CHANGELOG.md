@@ -3,6 +3,41 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.3] — 2026-06-17
+
+Backport from a user review of the consolidated 3-night CR that caught five
+real errors/omissions the verdict gate had passed — the lesson is that the
+gate verifies CLAIMS, not COVERAGE.
+
+- `references/methodology.md`: two new invariants. **14 — a "phase never
+  reached/played" claim needs the phase timeline**: a kill in phase N proves
+  N was played; report quantitatively ("P2 reached 5/16, killed in P2"), never
+  "P2 never played / killed in P1" (a real published error — the kill was in
+  P2 throughout). **15 — coverage is checked separately from claims; the
+  verdict gate is blind to omissions**: explicit pre-delivery sweep (every
+  night's trash analyzed, every boss/player verdict spans all its nights), and
+  hand-written prose must be RE-EXTENDED on every `add-report` (data digests
+  recompute across nights automatically, prose does not — it silently freezes
+  on night 1).
+- `references/wcl-api-gotchas.md`: **some "trash" fights are a boss's own
+  later-phase content.** WCL only tags a fight with the boss encounterID once
+  the boss frame engages; transition/realm wipes before that log as separate
+  encounterID-less fights named after the phase add (Garrosh's Realm of
+  Y'Shaarj → `Manifestation`/`Harbinger of Y'Shaarj`, killers Grasp/Reaping/
+  Blood of Y'Shaarj). Counting them as trash inflates trash, hides a real boss
+  wall (56 deaths), and undercounts attempts (≈7 real vs 4 official pulls).
+- `references/redaction-guide.md`: rule 11 — **prose wording must match the
+  mechanic's avoidability class** (a REDUCIBLE mechanic like Galakras Drakefire
+  is "kill the source / raid CDs", never "dodge it / collective avoidance"
+  which is the AVOIDABLE class and reads as individual blame); rule 12 —
+  multi-night verdicts span every night.
+- `references/zones/soo/traps.md`: Galakras row (Drakefire reducible-not-
+  avoidable, 119 deaths = #1 killer but collective; P2 reached 5/16, kill in
+  P2) + Garrosh Realm-as-trash and the Kor'kron approach gauntlet rows.
+- `SKILL.md` stage 8: a **coverage sweep** added to the publish gate
+  (per-night trash, multi-night verdict spans, phase-claim backing, trash-name
+  cross-check).
+
 ## [1.2.2] — 2026-06-17
 
 Backport from a consolidated multi-night CR (Équipage du Roux, one ID cleared

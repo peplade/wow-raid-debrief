@@ -28,6 +28,7 @@ publishing.
 | Norushen | Quarantine Safety Measures (145779) | Berserk at 418 s (shortest of the tier): deaths to it are a DPS-check verdict (collective), never individual. A 5% wipe AT the berserk is a pacing/eviction finding | learning night: 13 deaths at 417 s on a 5.2% wipe |
 | Sha of Pride HM | Banishment (145215) x Ethereal Corruption (149031) | The banished must clear the realm adds to get out; in learning raids the realm tick kills most of them (74% lethality measured: 17 deaths / 23 banishments). A banished death is an execution-drill finding, NOT a heal fault — the realm is self-managed | applydebuff 145215 vs deaths by 149031, 6 pulls 25H |
 | Sha of Pride HM | Swelling Pride (144400) first pulse | Wipes cluster EXACTLY at the first 100-energy pulse (t≈78 s): before blaming heals, count raid CDs posted (measured 4-10 CDs/pull on wipes vs 38-66 on same-night kills, zero lust) — the finding is usually a missing CD plan, not healer throughput | death timestamps all at 78 s, overkill 27-325k, cd_cast counts |
+| Galakras HM | Drakefire (148560) + P1 gauntlet | **REDUCIBLE, not avoidable** — recurring Proto-Drake breath (median 5 hits/player, 27 targets) suffered while drakes fly; cut it by killing drakes (tower tempo) + raid CDs on the breath waves, NEVER "dodge the fire". 119 deaths = #1 killer of the week but a collective CD/kill-pace problem, not individual placement. The wall is the P1 add gauntlet, not boss DPS. **Phase check**: P2 (Galakras himself) reached on 5/16 pulls and the kill is IN P2 — never write "P2 never played / killed in P1" | deep_phase + deep_dmg_taken, 16 pulls 25H |
 
 ## Trash (zone-wide)
 
@@ -35,6 +36,17 @@ publishing.
   trash as deaths + dangers + pacing, not as a DPS race.
 - A false pull right before a boss (multiple deaths, then immediate boss pull)
   is a pacing finding, not an individual blame.
+- **Garrosh Realm of Y'Shaarj wipes masquerade as trash.** Fights named
+  `Manifestation of Y'Shaarj` / `Harbinger of Y'Shaarj` (killers Grasp /
+  Reaping / Blood of Y'Shaarj) just before the first official Garrosh pull are
+  P2/P3 wipes, NOT trash — reattribute them to Garrosh (they hide a real Realm
+  wall and undercount Garrosh attempts). See `wcl-api-gotchas.md` →
+  boss-phase-bucketed-as-trash. Cross-check every trash NAME against boss-phase
+  adds before tallying.
+- The Kor'kron approach gauntlet before Garrosh (Overlord Runthak / Doomlord /
+  Kor'kron Skullsplitter — Boulder, Mind Spike, Serrated Rampage) is the
+  costliest genuine trash of the instance: treat it as a pre-boss with CDs and
+  positions, not a walk-in.
 
 ## Extraction gotchas re-verified on this zone
 

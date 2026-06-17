@@ -61,6 +61,23 @@ sense for the role it targeted. The rebuild rule that fixed it:
     corruption levels) and world interactions (pressure plates) leave no
     event. State "not measurable from logs" explicitly; a plausible proxy
     presented as measurement is a false verdict waiting to happen.
+14. **A "phase never reached/played" claim needs the phase timeline.** Before
+    writing that a boss phase was never seen, check measured phases (`phases`
+    module / `deep_phase`): a kill in phase N PROVES phase N was played, by
+    definition. Report it quantitatively — "P2 reached on 5/16 pulls, real
+    damage on 2, kill done in P2" — never "P2 never played / killed in P1"
+    (a real published error: the kill was in P2 the whole time). Phase counts
+    also re-bracket attempts: see the WCL trash-bucketing gotcha.
+15. **Coverage is checked separately from claims — the verdict gate is blind
+    to omissions.** Stages 5-6 verify what you DID assert; they never catch
+    what you forgot. Before delivery, run an explicit coverage sweep: every
+    NIGHT's trash analyzed (not just night 1), every boss verdict spans ALL
+    the nights it was pulled, every present-roster player's prose covers the
+    nights they played. On a multi-night ID the data digests recompute across
+    all nights automatically, but **hand-written prose does NOT** — re-extend
+    boss/trash/player/officers prose every time `add-report` appends a night,
+    or it silently freezes on night 1 (a real omission caught only on user
+    review, not by the gate).
 
 ## Extraction design (API economy)
 

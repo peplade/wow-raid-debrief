@@ -258,6 +258,19 @@ no empty main). Fix and re-run until clean. Then open 2-3 pages yourself
 (read the HTML) and check: titles coherent, numbers formatted, language
 uniform (no EN leakage in a FR report).
 
+COVERAGE SWEEP (the gate verifies claims, not omissions — invariant 15).
+Before delivery, on a multi-night ID especially:
+- every NIGHT's trash is analyzed (not just night 1) — `trash_fight` has
+  deaths on each night → there must be matching prose;
+- every boss synthesis and player verdict spans ALL the nights it was pulled
+  (data tables already do; hand-written prose lags — re-extend on add-report);
+- no "phase never reached" / "killed in P1" claim without the phase timeline
+  backing it (invariant 14);
+- trash-fight names cross-checked against boss-phase adds (a boss's realm/
+  transition wipes can be bucketed as trash — see wcl-api-gotchas).
+Omissions and night-1-frozen prose are exactly what slips past stages 5-6 and
+gets caught on user review instead.
+
 ## Stage 9 — delivery
 
 Deliver to the user:

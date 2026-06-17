@@ -60,6 +60,21 @@ Counter-example (slop — never write this):
 10. **The officers annex carries the blunt content** (rankings, individual
     discipline items, strategy questions). Public pages stay factual and
     constructive — they are readable by the players named on them.
+11. **Prose wording must match the mechanic's avoidability class.** If the
+    death classification says REDUCIBLE (kill the source / use CDs / shorten
+    the phase), never write "dodge it" / "stand out of it" / "collective
+    avoidance" — that is the AVOIDABLE class and reads as individual blame.
+    A recurring raid-wide breath (e.g. Galakras Drakefire, 119 deaths) is
+    reducible via add-kill pace + raid CDs, NOT a placement fail; a frontal
+    cone or a ground pool IS avoidable. Mixing the two either falsely blames
+    players or sends the wrong fix. The word in the prose must equal the class
+    in `mechanics_ref` (a real error: "Drakefire — collective avoidance" for a
+    reducible mechanic).
+12. **Multi-night verdicts span every night.** On a multi-night ID, a boss
+    synthesis and a player verdict must cover ALL nights that boss/player was
+    in — a verdict frozen on night 1 (only the first night's mechanics named)
+    is the most common omission (the data tables already span all nights; the
+    prose lags). Re-extend on every `add-report`.
 
 ### Pre-publish probe additions
 

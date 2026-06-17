@@ -83,6 +83,18 @@ Read before extraction; re-read when a number looks weird.
 - **masterData.actors** resolves every NPC/pet target name once per report.
 - **Trash = fights without encounterID** (request `fights` WITHOUT
   `killType:Encounters`; the filtered query silently hides trash).
+- **BUT some "trash" fights are a boss's own later-phase content.** WCL only
+  labels a fight with the boss `encounterID` once the boss frame/health is
+  engaged; a raid that wipes in a transition/realm phase BEFORE that (fighting
+  phase-spawned adds) gets logged as a SEPARATE encounterID-less fight named
+  after the add. Measured: Garrosh's Realm of Y'Shaarj wipes surfaced as
+  fights named `Manifestation of Y'Shaarj` / `Harbinger of Y'Shaarj` (killers
+  Grasp/Reaping/Blood of Y'Shaarj — all P2/P3 mechanics), sitting just before
+  the first official "Garrosh Hellscream" pull. Two consequences: (1) counting
+  them as trash INFLATES trash and HIDES a real boss wall (56 deaths here);
+  (2) the official-pull count UNDERCOUNTS attempts (≈7 real, not 4). Rule:
+  before tallying trash, cross-check each trash-fight NAME against the boss's
+  known phase adds/abilities; reattribute boss-phase fights to the boss.
 
 ## Quota & caching
 
