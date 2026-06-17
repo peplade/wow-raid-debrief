@@ -97,6 +97,44 @@ trail proving the gate ran; it stays in the workdir, unpublished.
   Normalize per kill-pull or per minute alive before ranking; a live run's
   "worst Desecrated offenders" (69 and 54 hits) were BELOW the top-parse
   average once restricted to the kill (11 and 10 vs tops' 12.98).
+- A kill-duration "vs tops" gap: compare to the bracket MEDIAN (n≈46), never
+  the fastest parse — rank-1 is the world record and exaggerates the gap
+  (Galakras kill 615s ≈ median 575s, but "vs 422s" reads as a chasm).
+
+## Nominative-accountability traps (who-did-what / who-failed tables)
+
+The deep "qui fait quoi" layer assigns individual blame — the highest
+false-blame risk. Five rules, each from a real error caught in gate. (This
+content is officers-only by perimeter — see redaction-guide — but the
+measurement rules apply wherever it is rendered.)
+
+1. **Absence of an action ≠ fault.** "0 kicks", "0 switches", "didn't soak"
+   is a reproach ONLY if the opportunity existed. Before blaming a missing
+   interrupt, confirm an interruptible cast was present (`raid_event
+   kind='interrupt_ability'` begun>0, or the spell appears interrupted
+   elsewhere in the log). Iron Juggernaut / Kor'kron Dark Shaman have ZERO
+   interruptible casts → "0 kicks" is correct, not a fail. Froststorm Bolt:
+   197 casts, never interrupted anywhere = not interruptible.
+2. **"Active damage during a stop-DPS window" = DIRECT SINGLE-TARGET only.**
+   For "who kept hitting the boss while he reflects/DRs/rages" (Nazgrim
+   Defensive Stance, aura 143593, ~60s windows) exclude: (a) DoT ticks
+   (`tick=1` — a DoT applied BEFORE the window keeps ticking; the player is
+   not actively hitting); (b) cleave/AoE (same `source_id+ability_id+ts_rel`
+   also hits another add → incidental splash while correctly on a priority
+   target like the banner). Keep only hits whose group targets ⊆ {boss}.
+   Without this, DoT classes (Demonology) and cleavers are falsely top-ranked
+   (Thoth 29M → 1.7M once DoT+cleave removed).
+3. **"Who didn't do X" must use the PRESENT roster** of that encounter
+   (`composition WHERE report,fight_id of the boss`), never the night/week
+   name pool — else players who were on OTHER nights surface as "didn't touch
+   the priority add" (a fully-absent false list, caught in gate twice).
+4. **Sum base+empowered ids for intake** (class F): Énergie déplacée
+   142913+142928, Whirling Corruption 144989+145033 — one id alone flips the
+   top-3 offenders.
+5. **Structural exposure is not a fault:** tanks MUST hit the boss (threat);
+   melee MUST stand in front on run-in bosses. Tag them and keep them out of
+   the DPS-accountability signal — never red a tank for boss damage or a
+   melee for eating a frontal.
 
 ## Zone-validated instances
 

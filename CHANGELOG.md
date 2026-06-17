@@ -3,6 +3,28 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.2] — 2026-06-17
+
+Backport from a consolidated multi-night CR (Équipage du Roux, one ID cleared
+over 3 nights) with a deep nominative "qui fait quoi" layer.
+
+- `references/interpretation-traps.md`: new section **Nominative-accountability
+  traps** (5 rules from real false-blames caught in gate): absence-of-action ≠
+  fault (verify an interruptible cast existed before blaming a missing kick —
+  IJ/Dark Shaman have none); "active damage during a stop-DPS window" = direct
+  single-target only (exclude DoT ticks `tick=1` and cleave that splashes off a
+  priority add); "who didn't do X" must use the PRESENT roster of the encounter,
+  not the night/week name pool (blamed absent players twice); sum base+empowered
+  ids (142913+142928, 144989+145033); tanks-on-boss / melee-on-frontal are
+  structural, not faults. Plus a self-audit heuristic: compare kill duration to
+  the bracket MEDIAN of tops (n≈46), never the fastest parse (rank-1 = world
+  record, exaggerates the gap).
+- `themes/default.css`: removed the leading comment that embedded the tool name
+  and "workdir" jargon into EVERY generated page's `<style>` — internal-vocab
+  leak on published pages. Neutralized to a generic rebrand hint.
+- Perimeter: the individual-blame nominative layer belongs in the officers
+  annex only, never on guild-facing boss pages.
+
 ## [1.2.1] — 2026-06-12
 
 The v1.2 layer now RENDERS: `scripts/pages_ext.py` plugged into pages.py

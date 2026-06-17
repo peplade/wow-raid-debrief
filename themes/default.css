@@ -1,5 +1,4 @@
-/* wow-raid-debrief default theme. Override: drop a theme.css in the workdir
-   (it REPLACES this file). Quick rebrand: edit the :root variables. */
+/* Theme — edit the :root variables to rebrand. */
 :root{--bg:#14171c;--panel:#1b1f27;--line:#2a2f3a;--tx:#e6e6e6;--mut:#8a93a2;--acc:#e8b923;--accd:#b8920f;--blue:#6db3f2;--green:#3fb950;--red:#e0744f;--hm:#a371f7}
 *{box-sizing:border-box}body{font:14px/1.55 system-ui,sans-serif;margin:0;background:var(--bg);color:var(--tx)}
 a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
