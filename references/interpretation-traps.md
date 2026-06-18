@@ -115,15 +115,61 @@ measurement rules apply wherever it is rendered.)
    elsewhere in the log). Iron Juggernaut / Kor'kron Dark Shaman have ZERO
    interruptible casts → "0 kicks" is correct, not a fail. Froststorm Bolt:
    197 casts, never interrupted anywhere = not interruptible.
-2. **"Active damage during a stop-DPS window" = DIRECT SINGLE-TARGET only.**
-   For "who kept hitting the boss while he reflects/DRs/rages" (Nazgrim
-   Defensive Stance, aura 143593, ~60s windows) exclude: (a) DoT ticks
+2. **"Active damage during a stop-DPS window" = DIRECT PLAYER-ATTRIBUTED
+   SINGLE-TARGET only.** For "who kept feeding rage while he is in Defensive"
+   (Nazgrim Defensive Stance, aura 143593, ~60s windows) exclude: (a) DoT ticks
    (`tick=1` — a DoT applied BEFORE the window keeps ticking; the player is
    not actively hitting); (b) cleave/AoE (same `source_id+ability_id+ts_rel`
    also hits another add → incidental splash while correctly on a priority
-   target like the banner). Keep only hits whose group targets ⊆ {boss}.
+   target like the banner); (c) **autonomous pet/guardian damage** (pet
+   auto-attack, Water Elemental Waterbolt, Dire Beast/Stampede, ghoul,
+   Gargoyle, Guardian of Ancient Kings, Dancing Rune Weapon, etc.). Keep only
+   hits whose group targets ⊆ {boss} AND are player-attributed.
+   **Why (mechanism, player-tested — NOT the tooltip; WCL cannot measure it,
+   the rage energize logs source=boss):** Defensive rage is fed ONLY by
+   PLAYER-attributed damage. Pet/guardian autonomous damage and DoT ticks do
+   NOT feed rage → counting them falsely blames hunters/warlocks/DKs for their
+   pet swinging. The exceptions that DO feed rage and must be RE-INCLUDED
+   (attributed to the owner): **Kill Command** (pet-sourced ability 83381, but
+   it is a player-activated ability) and **DoT applications/reapplications**
+   (the cast / `tick=0` initial hit, not the ticks). In SQL terms: drop
+   `source_id NOT IN composition` EXCEPT `ability_id IN (Kill Command ids)`
+   mapped to `petOwner`.
    Without this, DoT classes (Demonology) and cleavers are falsely top-ranked
-   (Thoth 29M → 1.7M once DoT+cleave removed).
+   (Thoth 29M → 1.7M once DoT+cleave removed); pet classes would be too
+   (a single Defensive set had ~50M of autonomous pet/guardian damage on the
+   boss — all rage-irrelevant). The tooltip "+rage when struck" reads as if any
+   strike counts — it does not; verify mechanic claims against player-tested
+   reports, never tooltip wording.
+   **v2 refinements (validated vs icy-veins/mythictrap + the written tooltip):**
+   - (d) **Sundering Blow tank exemption — the ONE exclusion written in the
+     tooltip** ("tanks with the Sundering Blow debuff are exempt"). Sundering
+     Blow = `Coup destructeur` 143494, a stacking debuff on the active tank.
+     Exclude a player's boss damage *while they hold it* (build apply→remove
+     intervals, merge refresh gaps, ~1.5s pad → handles tank swaps). Without it
+     the table just ranks the tanks (one tank 58M→4M generating, 49.7M exempt).
+     Show the split (generating vs exempt) per tank.
+   - (e) **Autonomous PROCS attributed to the player still don't feed rage** —
+     the rule is "player *attacks*", not "anything sourced from the player".
+     Exclude a CURATED, audited list of gear/totem/passive procs that fire with
+     no deliberate offensive GCD: legendary cloaks (Essence of Yu'lon 148008,
+     Flurry of Xuen 147891/149276), Capacitive meta-gem Lightning Strike/Foudre
+     (137597/141004/138146), Stormlash 120687, **mastery procs incl. Hand of
+     Light 96172 — NOT a DoT, it's the Ret mastery proc (instant, tick=0) — and
+     Icicle 148022**, Seal of Truth 42463, Deadly Poison 113780, Lightning
+     Shield 26364, and Shadow auto-apparitions 148859 + 73510. KEEP deliberate-
+     cast consequences (Starfall stars, Killing Spree, Glaive Toss, Living Bomb,
+     Death & Decay, DoT direct hits). Caveat: the proc rule is NOT log-verifiable
+     (rage isn't logged per source) → apply it as an execution convention ("did
+     you ease off"); keep the exclusion set a NAMED CONSTANT and audit per fight.
+   - (f) **Cast-then-autonomous-pecks (A Murder of Crows / Corbeaux dmg 131900,
+     logged `tick=0`)** obey the DoT rule: count ONLY if the trigger cast
+     (131894) landed DURING the stance window; pecks from a pre-stance cast =
+     pre-applied = no rage. Generalize as `{damage_id: cast_id}` gating.
+   - (g) **Do NOT classify proc-vs-deliberate by "has a cast event"** — the
+     DAMAGE `ability_id` ≠ the CAST `ability_id` (glyphs, spec variants, DoT
+     detonations, off-hand), so that heuristic wrongly drops Soul Reaper, Mind
+     Flay, Halo, Chaos Bolt. Use the curated id list, not a blanket rule.
 3. **"Who didn't do X" must use the PRESENT roster** of that encounter
    (`composition WHERE report,fight_id of the boss`), never the night/week
    name pool — else players who were on OTHER nights surface as "didn't touch

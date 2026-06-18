@@ -25,12 +25,17 @@ from wcl import Backend, load_config, load_env, workdir_from_args
 # Wowhead locale ids (tooltip endpoint ?locale=N).
 WOWHEAD_LOCALE = {"en": 0, "ko": 1, "fr": 2, "de": 3, "zh": 4, "es": 6,
                   "ru": 8, "pt": 10, "it": 11}
-TOOLTIP_URL = "https://nether.wowhead.com/tooltip/spell/{sid}?locale={loc}"
+# MoP-Classic tooltip endpoint (lang code in the PATH). The retail endpoint
+# (/tooltip/spell/{id}?locale=N) returns EMPTY for many old MoP base spell ids
+# (78 Heroic Strike, 3044 Arcane Shot, 421 Chain Lightning…), leaving "#xxxx"
+# in the report tables — mop-classic resolves them.
+TOOLTIP_URL = "https://nether.wowhead.com/mop-classic/{lang}/tooltip/spell/{sid}"
 
 
-def fetch_name(sid, loc):
-    url = TOOLTIP_URL.format(sid=sid, loc=loc)
-    req = urllib.request.Request(url, headers={"User-Agent": "wow-raid-debrief"})
+def fetch_name(sid, lang):
+    url = TOOLTIP_URL.format(sid=sid, lang=lang)
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "Mozilla/5.0 wow-raid-debrief"})
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
             data = json.load(r)
@@ -73,13 +78,12 @@ def collect_ids(be, workdir):
 
 def cmd_spells(be, cfg, args):
     lang = (cfg.get("lang") or "en").lower()
-    loc = WOWHEAD_LOCALE.get(lang)
     out_p = os.path.join(be.workdir, "refs", "spell_names.json")
     cache = {}
     if os.path.exists(out_p):
         cache = {int(k): v for k, v in
                  json.load(open(out_p, encoding="utf-8")).items() if v}
-    if loc is None:
+    if lang not in WOWHEAD_LOCALE:
         print(f"unknown lang '{lang}' — supported: {sorted(WOWHEAD_LOCALE)}")
         sys.exit(1)
     ids = collect_ids(be, be.workdir)
@@ -96,7 +100,7 @@ def cmd_spells(be, cfg, args):
     print(f"{len(ids)} ids referenced, {len(missing)} missing in {lang} cache")
     n_ok = 0
     for i, sid in enumerate(missing, 1):
-        name = fetch_name(sid, loc)
+        name = fetch_name(sid, lang)
         if name:
             cache[sid] = name
             n_ok += 1

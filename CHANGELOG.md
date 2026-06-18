@@ -3,6 +3,33 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.4] — 2026-06-18
+
+Backport from a live officers-annex review (Nazgrim Defensive rage table +
+kicks). Refines the "who fed rage" doctrine and fixes spell-name resolution.
+
+- `references/interpretation-traps.md` rule 2 — **Nazgrim Defensive rage, v2
+  refinements**: (d) **exempt the tank while holding Sundering Blow**
+  (`Coup destructeur` 143494 — the ONLY tooltip-written exclusion; per-interval
+  so tank swaps work; without it the table just ranks the tanks, one 58M→4M
+  generating / 49.7M exempt); (e) **autonomous procs attributed to the player
+  still don't feed rage** ("player *attacks*", not "anything player-sourced") —
+  curated exclusion of gear/totem/passive procs (legendary cloaks, meta-gem
+  Foudre, Stormlash, **mastery incl. Hand of Light 96172 = NOT a DoT, it's the
+  Ret mastery proc** + Icicle, seal/poison/lightning-shield, Shadow apparitions)
+  while KEEPING deliberate-cast consequences (Starfall, Killing Spree, Living
+  Bomb…); (f) **gate cast-then-pecks** (A Murder of Crows dmg 131900 counts only
+  if cast 131894 fell during the stance — DoT rule); (g) **don't classify
+  proc-vs-deliberate by "has a cast event"** — damage `ability_id` ≠ cast
+  `ability_id` (glyphs/variants/detonations/off-hand) wrongly drops Soul Reaper,
+  Mind Flay, Halo, Chaos Bolt; use a curated id list. Caveat kept: the proc rule
+  is an execution convention, NOT WCL-measurable.
+- `references/zones/soo/traps.md` — Nazgrim row updated with the v2 doctrine.
+- `scripts/localize.py` — **use the Wowhead mop-classic tooltip endpoint**
+  (`/mop-classic/<lang>/tooltip/spell/<id>`); the retail endpoint returns EMPTY
+  for old MoP base spell ids (78 Heroic Strike, 3044 Arcane Shot, 421 Chain
+  Lightning…), which left "#xxxx" in report tables.
+
 ## [1.2.3] — 2026-06-17
 
 Backport from a user review of the consolidated 3-night CR that caught five
