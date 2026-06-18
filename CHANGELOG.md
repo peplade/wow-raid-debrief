@@ -3,6 +3,21 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.6] — 2026-06-19
+
+Backport from extending the Sha of Pride page with per-pull damage-taken and
+lockout-time charts (numbers cross-checked exactly against the source DB).
+
+- **`zones/soo/traps.md`** — (1) the Mark of Arrogance row gains a MEASURABLE
+  KPI: Mark damage-taken DTPS (id 144351) per pull = the cost of leaving stacks
+  up; it collapses on a clean kill (60k DTPS vs 138-285k on wipes) → use it as
+  the dispel-discipline signal, not a raw dispel count. (2) New row: Corrupted
+  Prison / Banishment **time locked** = a break-SPEED metric (raid frees the
+  prisoner), measured by pairing `applydebuff`→`removedebuff` per (target,
+  ability) — Corrupted Prison ids 144574/144615/144636/144683/144684 (cast
+  144563), Banishment 145215 (HM, avg=0 in Normal = HM-only witness). Lower =
+  freed faster, never a fault on the prisoner.
+
 ## [1.2.5] — 2026-06-18
 
 Backport from a live session (Sha of Pride rift soaking analysis + a new
