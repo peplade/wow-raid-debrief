@@ -181,6 +181,29 @@ measurement rules apply wherever it is rendered.)
    melee MUST stand in front on run-in bosses. Tag them and keep them out of
    the DPS-accountability signal — never red a tank for boss damage or a
    melee for eating a frontal.
+6. **Prepull / premature-engagement attribution** (who pulled before the raid
+   was ready and wiped it). WCL anchors t=0 at combat start and logs NOTHING
+   about "the raid is ready" → no direct signal. Two objective signatures:
+   (A) **TAP** = WCL splits a short combat segment carrying the BOSS NAME (in
+   the encounterID-less set, e.g. "Iron Juggernaut" 1.6 s): someone tagged the
+   boss and combat dropped — attribute to the segment's DEATH (who ran in).
+   (B) **RAN-IN** = a death by `Melee` (`ability_name='Melee'`) at `death_time
+   < ~5 s` inside an official pull. Guards, each preventing a real false-blame:
+   - a TANK dying to Melee early is AMBIGUOUS (assigned puller / tanking) —
+     flag "to confirm", NEVER count it as a fault by default (check role via
+     `composition`).
+   - a segment with NO death is NOT attributed (don't invent a name); pure
+     0-damage flickers are dropped entirely.
+   - "leads to a wipe" = the following/containing official pull is a wipe =
+     CORRELATION, not proven sole cause; events that precede a KILL are not
+     "wipe-causing" and must be excluded from the recidivist tally.
+   - death = engagement proxy (a ranged puller while a melee dies is not
+     excluded by the log) — say so. Deliver an event LEDGER + recidivist tally
+     the officers adjudicate with context, not a verdict.
+   Pitfalls: the deep damage/aura/cast tables do NOT cover these short trash
+   segments (no first-damage → you fall back to the death); `death_time` is
+   fight-relative ms (≠ the report-absolute `pull.start_time`). Officers-only
+   by perimeter (blame never goes on a public page).
 
 ## Zone-validated instances
 

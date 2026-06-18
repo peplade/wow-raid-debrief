@@ -3,6 +3,32 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.5] — 2026-06-18
+
+Backport from a live session (Sha of Pride rift soaking analysis + a new
+prepull-accountability section), validated by an adversarial `wow-cr-verifier`
+pass (GO/GO, 0 blocker) before publishing.
+
+- **`interpretation-traps.md`** — new nominative rule 6: **prepull /
+  premature-engagement attribution**. Two log signatures (boss-named short TAP
+  segment attributed to its death; `Melee` RAN-IN death `<5 s` into a pull) with
+  the anti-blame guards (tank-ambiguous never auto-counted, no-death segment not
+  attributed, leads-to-wipe = correlation not cause, death = engagement proxy).
+  Officers-only by perimeter.
+- **`zones/soo/traps.md`** — new Sha of Pride HM row: **Rift of Corruption
+  (soak)**. Heroic-only (Normal-kill witness = 0 soak hits). Unstable Corruption
+  147198 = 350k Shadow + **5 Pride per hit**; Rift Collapse 147388 = 250k on
+  close. Soaking = damage AND Pride injection (fuels Swelling Pride) → a soaker-
+  rotation + Pride-economy problem, framed collectively; Pride-from-rifts =
+  hits×5 component proxy, never the bar. IDs verified wowhead mop-classic.
+- **`wcl-api-gotchas.md`** — (1) boss-named short trash segment = a PREPULL tap
+  (opposite of phase-content trash), attribute by the death; deep tables don't
+  cover these segments. (2) workdir DB aggregates many guilds → filter EVERY
+  query via `raid_session.guild`, never assume a table holds only your reports.
+  (3) `death.death_time` is fight-relative ms (≠ absolute `pull.start_time`).
+  (4) exception to "resource gains unlogged": a soak with a damage component
+  (Sha rift 147198) IS measurable; only its Pride grant is proxied.
+
 ## [1.2.4] — 2026-06-18
 
 Backport from a live officers-annex review (Nazgrim Defensive rage table +

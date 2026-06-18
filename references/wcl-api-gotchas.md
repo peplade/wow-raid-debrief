@@ -95,6 +95,15 @@ Read before extraction; re-read when a number looks weird.
   (2) the official-pull count UNDERCOUNTS attempts (≈7 real, not 4). Rule:
   before tallying trash, cross-check each trash-fight NAME against the boss's
   known phase adds/abilities; reattribute boss-phase fights to the boss.
+- **A boss-named SHORT segment (a few seconds, with one death) is the opposite
+  case: a PREPULL/accidental tap, not phase content.** Someone tagged the boss
+  and combat dropped (e.g. "Iron Juggernaut" 1.6 s, a melee death at 24 ms).
+  This is a usable accountability signal — attribute the prepull to the
+  segment's death (who ran in) — see `interpretation-traps.md` rule 6. Note the
+  deep damage/aura/cast tables do NOT cover these segments, so there is no
+  first-damage event to attribute by; you fall back to the death. Distinguish
+  from phase-content trash by duration (seconds, not minutes) + a low-`ts_rel`
+  Melee death.
 
 ## Quota & caching
 
@@ -136,7 +145,15 @@ Read before extraction; re-read when a number looks weird.
 - The `composition` table also stores combatants of TOP-PARSE reports
   ingested by `top-detail` (other guilds). Any roster/ilvl query MUST filter
   `report IN (<own report codes>)` — an unfiltered roster query returned
-  thousands of foreign players.
+  thousands of foreign players. **This generalizes: the whole workdir DB
+  aggregates many guilds (`top_parse` percentiles). Resolve your own reports
+  once via `raid_session WHERE guild LIKE '<own>'` and filter EVERY analysis
+  query by it. Some tables (e.g. `pull`) may happen to hold only your reports,
+  but never rely on that — filter explicitly.**
+- `death.death_time` is **fight-relative milliseconds** (≠ the report-absolute
+  `pull.start_time`). Don't subtract the two — a `death_time` of 1510 is 1.5 s
+  into the pull, not 1.5 s after epoch. (`<5 s` Melee deaths = ran-in / prepull
+  candidates, see interpretation-traps rule 6.)
 - `deep_graph` series (`pointStart`) are in ABSOLUTE report milliseconds,
   not fight-relative: subtract the pull's `start_time` before computing
   fight-relative timestamps (a 111 s pull otherwise shows events at ~3200 s).
@@ -152,7 +169,11 @@ Read before extraction; re-read when a number looks weird.
 - Resource gains are NOT in the combat log: orb-soaking mechanics that grant
   a power bar (e.g. Norushen corruption) and the power bar itself leave no
   aura/cast trace — "who soaked the orb" is unmeasurable from events. Say so
-  explicitly instead of proxying. Trial/realm auras may log applydebuff
+  explicitly instead of proxying. **Exception — a soak that comes with a DAMAGE
+  component IS measurable:** Sha of Pride HM Rift of Corruption deals Unstable
+  Corruption 147198 (a damage event) to soakers, so soak load per player IS
+  countable; only the +5 Pride it grants is unlogged → proxy Pride-from-rifts
+  as hits×5 and label it a component, never the bar (see zones/soo/traps.md). Trial/realm auras may log applydebuff
   reliably but removedebuff only sporadically: count entries, don't trust
   durations.
 - Friendly-NPC healing (e.g. healable add phases) IS in healing events with
