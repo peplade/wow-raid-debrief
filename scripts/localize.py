@@ -45,7 +45,8 @@ def collect_ids(be, workdir):
     """Every spell id the report pages may display."""
     ids = set()
     for table, col in (("player_ability", "ability_id"), ("death", "ability_id"),
-                       ("deep_dmg_taken", "ability_id"), ("deep_aura", "ability_id"),
+                       ("deep_dmg_taken", "ability_id"), ("deep_dmg_done", "ability_id"),
+                       ("deep_aura", "ability_id"),
                        ("deep_heal_ability", "ability_id"), ("raid_event", "ability_id")):
         for r in be.con.execute(f"SELECT DISTINCT {col} i FROM {table} "
                                 f"WHERE {col} IS NOT NULL AND {col} > 1"):
