@@ -75,6 +75,15 @@ Counter-example (slop — never write this):
     in — a verdict frozen on night 1 (only the first night's mechanics named)
     is the most common omission (the data tables already span all nights; the
     prose lags). Re-extend on every `add-report`.
+13. **No section YOU invent — a section = log-backed data, period.** Forbidden:
+    editorial recaps, "rules observed → to confirm as policy", targets YOU label
+    "priority", strategic classifications, any synthesis-recommendation you author.
+    Those are officer/domain calls, not log facts — slop (the EdR CR's §12 "Roster
+    & rules to confirm" was deleted TWICE; a switch-section "priority targets
+    (proposal to validate)" was removed). If strategic info is missing: ASK or
+    OMIT, never fabricate an advice section. (This sharpens rule 2 "no generic
+    advice": rule 2 bans bad recommendations, rule 13 bans inventing whole
+    sections of them.)
 
 ### Pre-publish probe additions
 

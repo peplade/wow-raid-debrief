@@ -3,6 +3,17 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.12] — 2026-06-19
+
+- **redaction-guide rule 13: no section YOU invent.** A section = log-backed data,
+  period. Forbidden: editorial recaps, "rules observed → to confirm as policy",
+  targets you label "priority", strategic classifications, any synthesis-recommendation
+  you author — those are officer/domain calls, not log facts (the EdR §12 "Roster &
+  rules" was deleted TWICE; a switch-section "priority targets (proposal to validate)"
+  was removed). Missing strategic info → ask or omit, never fabricate an advice
+  section. Sharpens rule 2 (rule 2 bans bad recommendations; rule 13 bans inventing
+  whole sections of them).
+
 ## [1.2.11] — 2026-06-19
 
 - **Prepull / premature-engagement detection ABANDONED — do not build.** The two
