@@ -3,11 +3,20 @@
 -- INSERT ... ON CONFLICT DO UPDATE. ts_rel = ms since pull start.
 
 -- Raw WCL API response cache. Anti rate-limit + reproducible: re-runs are free.
+-- `response` = lzma-compressed JSON BLOB (~x21 smaller; wcl.py compresses on
+-- write, decompresses on read). Legacy rows may still be uncompressed TEXT —
+-- cache_get discriminates by Python type (bytes vs str). Migrate existing dbs
+-- with `migrate_lzma.py`. SQLite type affinity is loose so a BLOB declaration
+-- does not rewrite legacy rows; the column type is documentation here.
+-- This is Tier 0 (cold cache) of the 3-tier model: point-lookup by query_hash,
+-- never scanned, stays partitioned per-night. Tier 1 (warm aggregates) is
+-- rolled forward into ~/raids/_history/history.db (schema_history.sql); Tier 2
+-- (raw deep_* events, ~9M rows/night) stays partitioned per-night below.
 CREATE TABLE IF NOT EXISTS wcl_raw (
     query_hash TEXT PRIMARY KEY,
     query      TEXT NOT NULL,
     variables  TEXT,
-    response   TEXT NOT NULL,
+    response   BLOB NOT NULL,
     fetched_at TEXT NOT NULL
 );
 

@@ -20,6 +20,7 @@ Workdir layout (one per raid ID — one or several nights/reports — created by
 import base64
 import hashlib
 import json
+import lzma
 import os
 import sqlite3
 import sys
@@ -123,7 +124,15 @@ class Backend:
     def cache_get(self, key):
         r = self.con.execute("SELECT response FROM wcl_raw WHERE query_hash=?",
                              (key,)).fetchone()
-        return r["response"] if r else None
+        if not r:
+            return None
+        raw = r["response"]
+        # Retro-compat: legacy rows are TEXT (sqlite -> str), new rows are
+        # lzma-compressed JSON BLOB (sqlite -> bytes). A decompress failure on a
+        # corrupt blob MUST crash loudly here — never swallow it into a silent
+        # cache-miss (that would mask a paid re-fetch), per the loud-failure rule.
+        return (lzma.decompress(raw).decode("utf-8")
+                if isinstance(raw, (bytes, bytearray)) else raw)
 
     def done(self, code, fid, what):
         return self.con.execute(
@@ -285,7 +294,10 @@ def gql(be, query, **variables):
         be.upsert("wcl_raw", {
             "query_hash": key, "query": query,
             "variables": json.dumps(variables, sort_keys=True),
-            "response": json.dumps(resp),
+            # lzma BLOB (~x21 smaller than raw JSON). sqlite binds bytes->BLOB
+            # natively; cache_get decompresses on read. wcl_raw is write-once so
+            # this never round-trips a read-modify cycle.
+            "response": lzma.compress(json.dumps(resp).encode("utf-8")),
             "fetched_at": datetime.now(timezone.utc).isoformat(),
         }, ["query_hash"])
         be.commit()

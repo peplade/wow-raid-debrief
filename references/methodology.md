@@ -78,6 +78,14 @@ sense for the role it targeted. The rebuild rule that fixed it:
     boss/trash/player/officers prose every time `add-report` appends a night,
     or it silently freezes on night 1 (a real omission caught only on user
     review, not by the gate).
+16. **Longitudinal facts are scored per (player, night, spec), never an
+    averaged blob.** Cross-lockout trajectories live in `history.db`; player
+    identity is the NAME (actor_id is per-report, not stable), and throughput is
+    spec-split (a mid-night respec is two rows, never one mixed number). N vs H
+    raw DPS is not comparable — only the percentile is (invariant carries to
+    trends). A rollup must stay reconstructible from the per-night facts (which
+    stay sourced to events): an aggregate that cannot be traced back is a
+    verdict waiting to drift.
 
 ## Extraction design (API economy)
 

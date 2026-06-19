@@ -3,6 +3,28 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [2.0.0] — 2026-06-19
+
+- **3-tier data architecture: lzma cache + unified `history.db` for cross-lockout
+  analysis.** Storage is now tiered by access pattern. **Tier 0** — the `wcl_raw`
+  response cache is lzma-compressed (`response` BLOB; `cache_get` decompresses,
+  retro-compatible with legacy TEXT rows). Reclaimed ~62% of disk
+  (7.3G→2.8G across existing workdirs); migrate old ones with
+  `scripts/migrate_lzma.py` (backup + round-trip gate + VACUUM + `user_version`).
+  **Tier 1** — the small aggregate layer (pull, composition, player_fight, death,
+  conso, deep_heal_ability, top_parse, percentiles) rolls forward into a durable
+  `~/raids/_history/history.db` (`scripts/history_sync.py`, Stage 9), with a
+  **stable player dimension keyed on name** (WCL exposes no realm/guild per
+  player), per-parse percentiles, and 5 materialized rollups (player×boss×**spec**
+  encounter throughput/parse/deaths + 4 raw-event: avoidable, interrupt,
+  aura-uptime, CD casts), recomputed idempotently per `raid_label`. **Tier 2** —
+  the ~9M-row `deep_*` raw events stay partitioned per night (never queried
+  cross-night; unifying them would be 300M+ rows for no use case).
+  `evolution.py` now reads `history.db` cross-lockout instead of looping over
+  per-workdir silos — **output is byte-identical** (verified diff), so
+  `pages_ext` rendering is unchanged. Stdlib-only preserved (lzma/sqlite3).
+  Validated GO by 3 Conclave specialists (DBA, db-optimizer, code-reviewer).
+
 ## [1.2.14] — 2026-06-19
 
 - **Evolution page: rich + dynamic, and it's a ROLLUP you must republish every

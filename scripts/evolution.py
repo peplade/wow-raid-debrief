@@ -28,48 +28,66 @@ SLOT_IDX_SKIP = (3, 17)        # shirt, tabard
 WOWHEAD = "https://nether.wowhead.com/mop-classic/%s/tooltip/item/%d"
 
 
+def _history_db():
+    p = os.environ.get("RAID_HISTORY_DB")
+    return os.path.abspath(p) if p else os.path.expanduser(
+        "~/raids/_history/history.db")
+
+
 def week_data(wd):
+    """Cross-lockout week dataset, read from the unified history.db (NOT the
+    per-night raid.db silo). The workdir's raid_label (cfg["label"]) selects the
+    night. Output contract is byte-identical to the legacy raid.db path so
+    pages_ext.page_evolution is unaffected. Fails LOUDLY if the night has not
+    been synced yet (run history_sync.py --backfill <wd>)."""
     cfg = load_config(wd)
-    own = tuple(cfg["reports"])
-    ph = ",".join("?" * len(own))
-    db = sqlite3.connect(os.path.join(wd, "raid.db"), timeout=30)
+    raid_label = cfg.get("label")
+    hdb = _history_db()
+    if not os.path.exists(hdb):
+        sys.exit(f"history.db introuvable ({hdb}) — lance d'abord :\n"
+                 f"  python3 history_sync.py --backfill {wd}")
+    db = sqlite3.connect(hdb, timeout=30)
     db.row_factory = sqlite3.Row
+    if not db.execute("SELECT 1 FROM h_pull WHERE raid_label=? LIMIT 1",
+                      (raid_label,)).fetchone():
+        sys.exit(f"raid_label '{raid_label}' absent de history.db — lance :\n"
+                 f"  python3 history_sync.py --backfill {wd}")
 
     pulls = [dict(r) for r in db.execute(
-        f"SELECT * FROM pull WHERE report IN ({ph}) ORDER BY start_time", own)]
+        "SELECT * FROM h_pull WHERE raid_label=? ORDER BY start_time", (raid_label,))]
     kills = [p for p in pulls if p["kill"]]
     wipes = [p for p in pulls if not p["kill"]]
 
     roster = {}
     for r in db.execute(
-            f"SELECT player_name, MAX(class) cls, MAX(spec) spec,"
-            f" MAX(role) role, ROUND(AVG(NULLIF(item_level,0)),1) il,"
-            f" COUNT(*) n FROM composition WHERE report IN ({ph})"
-            f" GROUP BY player_name", own):
+            "SELECT player_name, MAX(class) cls, MAX(spec) spec,"
+            " MAX(role) role, ROUND(AVG(NULLIF(item_level,0)),1) il,"
+            " COUNT(*) n FROM h_composition WHERE raid_label=?"
+            " GROUP BY player_name", (raid_label,)):
         roster[r["player_name"]] = {
             "class": r["cls"], "spec": r["spec"], "role": r["role"],
             "ilvl": r["il"], "fights": r["n"]}
 
     deaths_by = {r[0]: r[1] for r in db.execute(
-        f"SELECT player_name, COUNT(*) FROM death WHERE report IN ({ph}) "
-        f"GROUP BY player_name", own)}
-    pp = db.execute(f"SELECT SUM(prepot), COUNT(*) FROM conso "
-                    f"WHERE report IN ({ph})", own).fetchone()
+        "SELECT player_name, COUNT(*) FROM h_death WHERE raid_label=? "
+        "GROUP BY player_name", (raid_label,))}
+    pp = db.execute("SELECT SUM(prepot), COUNT(*) FROM h_conso "
+                    "WHERE raid_label=?", (raid_label,)).fetchone()
     prepot_rate = round(pp[0] / pp[1], 3) if pp and pp[1] else None
 
-    perc_path = os.path.join(wd, "digests", "percentiles.json")
-    perc = json.load(open(perc_path)) if os.path.exists(perc_path) else {}
     by_player = defaultdict(list)
-    for fk, f in perc.items():
-        for p in f["players"]:
-            by_player[p["name"]].append({
-                "boss": f["boss"], "difficulty": f["difficulty"],
-                "metric": p["metric"], "role": p["role"],
-                "amount": round(p["amount"] or 0),
-                "percentile": p["rank_percent"], "ilvl": p["ilvl"]})
+    for r in db.execute(
+            "SELECT player_name, boss, difficulty, metric, role, amount, "
+            "rank_percent, ilvl FROM h_percentile WHERE raid_label=? "
+            "ORDER BY report, fight_id", (raid_label,)):
+        by_player[r["player_name"]].append({
+            "boss": r["boss"], "difficulty": r["difficulty"],
+            "metric": r["metric"], "role": r["role"],
+            "amount": round(r["amount"] or 0),
+            "percentile": r["rank_percent"], "ilvl": r["ilvl"]})
 
     return {
-        "label": cfg.get("label"), "reports": list(own),
+        "label": cfg.get("label"), "reports": list(cfg.get("reports") or []),
         "raid": {
             "n_pulls": len(pulls), "n_kills": len(kills),
             "n_wipes": len(wipes),

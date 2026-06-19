@@ -82,7 +82,9 @@ write the choices into the final summary.
 Read `references/wcl-api-gotchas.md` AND `references/extraction_manifest.md` NOW
 (failure modes are silent). The manifest is the **exhaustive list of what to pull +
 the fields that must never be dropped/merged + which section each feeds** — extract
-WIDE once (the `wcl_raw` cache makes re-runs free); never narrow a dimension "because
+WIDE once (the `wcl_raw` cache — lzma-compressed BLOBs, ~x18 vs raw JSON; legacy
+uncompressed workdirs migrate with `scripts/migrate_lzma.py` — makes re-runs free);
+never narrow a dimension "because
 we don't need it yet" — that narrowing is what silently creates the holes (a real one:
 pulling only enemy-cast COMPLETIONS — under-logged when several adds cast in unison —
 without the spell's DAMAGE events, so "did it land" cannot be reconstructed after the
@@ -293,7 +295,18 @@ gets caught on user review instead.
 
 ## Stage 9 — delivery
 
-Deliver to the user:
+Roll this night into the longitudinal store FIRST — the durable cross-lockout
+asset (`~/raids/_history/history.db`); `evolution.py` reads it, not the per-night
+silo. Idempotent (re-runnable) and additive:
+```bash
+python3 "$SKILL/scripts/history_sync.py" <workdir>
+```
+It lifts the Tier-1 aggregates (player/boss/spec rollups + 4 raw-event rollups:
+avoidable, interrupt, aura-uptime, CD casts) + per-parse percentiles, keyed by a
+stable player identity (name) so a player's trajectory spans lockouts. Backfill
+older nights with `history_sync.py --backfill <wd>...`.
+
+Then deliver to the user:
 1. where the pages are (path/URL) and what was generated (counts);
 2. the 3-5 most actionable findings (one line each, with their anchor);
 3. ALL open questions from verdicts.md, grouped, phrased for the raid lead;

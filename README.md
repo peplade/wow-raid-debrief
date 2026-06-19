@@ -96,6 +96,15 @@ produced the debrief, `ingest.py add-report` completes the existing workdir:
 only the new report costs API points, earlier pull numbers never shift, and
 the written content stays valid.
 
+**Cross-lockout history** is kept in a separate durable store
+`~/raids/_history/history.db` (one row per night's aggregates, stable
+player identity by name). `scripts/history_sync.py <workdir>` rolls a night
+into it (run at delivery; idempotent); `scripts/evolution.py` reads it to build
+the week-over-week page. The per-night `<workdir>/raid.db` files stay the source
+of raw detail and are re-extractible from the lzma cache, so the history store
+is the asset worth backing up. Disk note: the `wcl_raw` API cache is
+lzma-compressed; pre-2.0 workdirs reclaim ~60% via `scripts/migrate_lzma.py`.
+
 The skill will extract (~5 min, quota-aware), analyze, investigate, write,
 generate and probe the pages into a local workdir:
 
