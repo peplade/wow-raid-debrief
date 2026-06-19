@@ -3,6 +3,28 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.10] — 2026-06-19
+
+- **Kicks: canonical pipeline replaces the simple table.** New `scripts/kicks.py`
+  (data builder, ingested tables only — never re-parses `wcl_raw`) + new
+  `scripts/kicks_render.py` (per-cast TIMELINE: one cast = one lane, x-axis =
+  reaction from the begincast; bar to the kick / full if landed / to death / stub;
+  dot `left` clamped ≥0; "en avance" if reaction<0 else "en retard"; -0.0
+  normalized). Wired into the boss page (`nominative=False` — lanes + names, no
+  scoreboard) and exposed for the officers annex (`nominative=True` — + efficiency/
+  wasted scoreboard + "never kicked"; a ranking is blame, officers-only). The old
+  per-player/per-spell table in `pages_ext.nominative_section` is removed.
+- **Damage-as-landing.** Enemy cast COMPLETIONS are under-logged when several adds
+  cast the same spell at once (Sha 273 begincast → 89 completions); the spell's
+  `deep_dmg_taken` events are now ground truth for "landed", in union with
+  completions. A begincast with no damage and no interrupt = "no-hit" (add
+  killed/CC'd), not a missed kick. New `references/kicks.md` (canonical doctrine);
+  `extraction_manifest.md` kicks block rewritten (drops the abandoned
+  `extract_interrupts.py` framing — id 32747 / extraAbilityGameID / target-was-casting
+  gate were artifacts, never log truth); `wcl-api-gotchas.md` gotcha added; `SKILL.md`
+  completeness assertion aligned. Avenger's Shield (on-CD damage) is excluded from the
+  dedicated kick spells and credited via interrupt events → 100% efficiency.
+
 ## [1.2.9] — 2026-06-19
 
 - **`scripts/pages.py` — per-pull boss timeline charts made legible.** The rotated

@@ -79,7 +79,14 @@ write the choices into the final summary.
 
 ## Stage 2 — extraction
 
-Read `references/wcl-api-gotchas.md` NOW (failure modes are silent).
+Read `references/wcl-api-gotchas.md` AND `references/extraction_manifest.md` NOW
+(failure modes are silent). The manifest is the **exhaustive list of what to pull +
+the fields that must never be dropped/merged + which section each feeds** — extract
+WIDE once (the `wcl_raw` cache makes re-runs free); never narrow a dimension "because
+we don't need it yet" — that narrowing is what silently creates the holes (a real one:
+pulling only enemy-cast COMPLETIONS — under-logged when several adds cast in unison —
+without the spell's DAMAGE events, so "did it land" cannot be reconstructed after the
+fact). Walk the manifest before `ingest all`, assert completeness after.
 
 ```bash
 cd <workdir-parent> && mkdir -p <label> && cd <label>
@@ -102,6 +109,13 @@ GATE: `python3 "$SKILL/scripts/ingest.py" status` prints `STATUS: OK`
 (exit 0). On FAIL lines: re-run the failed stage (free thanks to the cache),
 or investigate with the gotchas doc. The integrity check "every player has
 DamageTaken events" failing = extraction bug, NEVER "they took no damage".
+**Completeness assertion (manifest):** for every dimension you'll use, confirm its
+key fields are populated, not just present — validate by an EXPECTED POSITIVE (a kill
+with caster adds HAS `deep_aura kind='interrupt'` rows (source_id=kicker, target_id=mob,
+ability_id=stopped spell) AND `deep_cast` rows for the dedicated interrupt spells AND
+`deep_dmg_taken` rows for the danger spell (landing truth); a tank HAS damage-taken).
+A declared field NULL/zero on >90% of rows = an
+extraction hole to fix NOW, not a finding. Write down anything absent by nature.
 
 Quota is SELF-MANAGED at the client level (WCL `rateLimitData`): polled every
 ~150 live calls, auto-pause through the hourly reset above 85%, and a 429
@@ -139,6 +153,7 @@ GATE: `ingest.py status` now also shows refs PASS; and for each roster spec,
 python3 "$SKILL/scripts/analyze.py" all         # writes digests/analysis/*.json
 python3 "$SKILL/scripts/dossiers.py"            # per-pull dossiers + CD availability
 python3 "$SKILL/scripts/execution.py"           # WHO kicks/switches/camps (zone config)
+python3 "$SKILL/scripts/kicks.py"               # kicks timeline data (damage-as-landing) -> kicks.json
 python3 "$SKILL/scripts/pacing.py"              # combat vs idle, repull discipline
 python3 "$SKILL/scripts/percentiles.py"         # per-player kill percentiles (~2 calls/report)
 # week-over-week (only when earlier debrief workdirs exist for this guild):

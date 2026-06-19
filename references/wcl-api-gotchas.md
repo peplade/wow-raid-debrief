@@ -15,6 +15,16 @@ Read before extraction; re-read when a number looks weird.
   **Validate every extraction by an EXPECTED POSITIVE** (a tank with zero
   damage taken = alarm; a healer with zero casts = alarm), never by the
   absence of an error.
+- **Enemy-cast COMPLETIONS are under-logged when several adds cast the same
+  spell in unison.** WCL logs every `begincast` but drops completions
+  (`type='cast'`): measured on Sha de l'Orgueil, **273 begincast → 89
+  completions** on Mocking Blast. NEVER infer "the cast landed / passed" from
+  the completion count. Landing truth = the spell's DAMAGE events
+  (`deep_dmg_taken ability_id`), taken in UNION with completions. A begincast
+  with NO damage and NO interrupt = hit nobody (add killed/CC'd), not an
+  ambiguous "cancelled cast". **Limit:** an enemy HEAL (e.g. Galakras Chain Heal
+  146757) has no player-damage signal → its unlogged completions stay invisible
+  (say so, don't invent). See `kicks.md` (damage-as-landing).
 - **`graph()` without explicit `startTime`/`endTime` spans the WHOLE REPORT**
   even with `fightIDs` set (same family: windowless `events()` on some
   dataTypes truncates or widens silently). Symptom: cumulative
@@ -98,12 +108,13 @@ Read before extraction; re-read when a number looks weird.
 - **A boss-named SHORT segment (a few seconds, with one death) is the opposite
   case: a PREPULL/accidental tap, not phase content.** Someone tagged the boss
   and combat dropped (e.g. "Iron Juggernaut" 1.6 s, a melee death at 24 ms).
-  This is a usable accountability signal — attribute the prepull to the
-  segment's death (who ran in) — see `interpretation-traps.md` rule 6. Note the
-  deep damage/aura/cast tables do NOT cover these segments, so there is no
-  first-damage event to attribute by; you fall back to the death. Distinguish
-  from phase-content trash by duration (seconds, not minutes) + a low-`ts_rel`
-  Melee death.
+  Useful ONLY to avoid mistaking it for phase trash (distinguish by duration —
+  seconds, not minutes — + a low-`ts_rel` Melee death). **Do NOT turn it into a
+  prepull scoreboard:** tap + early-Melee signatures are blind to PROXIMITY pulls,
+  so any "who prepulls" tally is a non-exhaustive sample masquerading as a count
+  (ABANDONED — see `interpretation-traps.md` rule 6). The deep damage/aura/cast
+  tables do NOT cover these segments (no first-damage event); you only have the
+  death.
 
 ## Quota & caching
 
@@ -152,8 +163,9 @@ Read before extraction; re-read when a number looks weird.
   but never rely on that — filter explicitly.**
 - `death.death_time` is **fight-relative milliseconds** (≠ the report-absolute
   `pull.start_time`). Don't subtract the two — a `death_time` of 1510 is 1.5 s
-  into the pull, not 1.5 s after epoch. (`<5 s` Melee deaths = ran-in / prepull
-  candidates, see interpretation-traps rule 6.)
+  into the pull, not 1.5 s after epoch. (`<5 s` Melee deaths are ran-in
+  candidates — but a prepull TALLY is ABANDONED: proximity-blind, see
+  interpretation-traps rule 6.)
 - `deep_graph` series (`pointStart`) are in ABSOLUTE report milliseconds,
   not fight-relative: subtract the pull's `start_time` before computing
   fight-relative timestamps (a 111 s pull otherwise shows events at ~3200 s).

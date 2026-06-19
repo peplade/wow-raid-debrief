@@ -271,32 +271,10 @@ def nominative_section(gen, boss_log_name):
     parts = ['<h2 id="who">%s <small>%s</small></h2>'
              % (X["who_title"], X["who_sub"])]
 
-    kicks = ex.get("kicks") or {}
-    if kicks:
-        parts.append("<h3>%s</h3>" % X["kicks"])
-        rows = [(esc(nm),
-                 esc(" · ".join("%s ×%d" % (gen.tr_name(s), n)
-                                for s, n in sorted(v.items(),
-                                                   key=lambda x: -x[1]))),
-                 sum(v.values()))
-                for nm, v in kicks.items()]
-        parts.append(table([X["th_player"], "", "total"],
-                           [(a, b, c) for a, b, c in rows]))
-        by_spell = defaultdict(list)
-        for c in ex.get("casts_through") or []:
-            by_spell[c["spell"]].append(c)
-        rows = []
-        for sp, lst in sorted(by_spell.items()):
-            tb = sum(c["begun"] or 0 for c in lst)
-            tt = sum(c["through"] or 0 for c in lst)
-            kl = [c for c in lst if c["kill"]]
-            rows.append((esc(gen.tr_name(sp)), tb, tt,
-                         "%d %%" % round(100 * (tb - tt) / tb) if tb else "—",
-                         "%s/%s" % (kl[0]["through"], kl[0]["begun"])
-                         if kl else "—"))
-        if rows:
-            parts.append(table([X["th_spell"], X["th_begun"], X["th_through"],
-                                X["th_kicked"], X["th_kill"]], rows))
+    # Kicks: the simple per-player/per-spell table is RETIRED in favor of the
+    # canonical kicks TIMELINE (scripts/kicks_render.kicks_section), wired on the
+    # boss page (nominative=False) and the officers annex (nominative=True, with
+    # the scoreboard). See references/kicks.md.
 
     sw = ex.get("switch") or {}
     if sw:

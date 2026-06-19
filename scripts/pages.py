@@ -39,6 +39,7 @@ from wcl import (Backend, load_config, load_env, report_codes, save_config,
                  workdir_from_args)
 from ingest import RAID_CDS
 import pages_ext as ext
+import kicks_render as kr
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 THEME_DEFAULT = os.path.join(os.path.dirname(SCRIPTS_DIR), "themes", "default.css")
@@ -606,6 +607,10 @@ class Gen:
         h.append(ext.nominative_section(self, bd.get("boss")))
         h.append(self.auto_avoidable_section(bd.get("boss"), suffix))
         h.append(self.auto_exec_section(bd.get("boss"), suffix))
+        # Kicks timeline (public = lanes + names, no scoreboard; cf kicks_render).
+        h.append(kr.kicks_section(
+            self.J("kicks.json", {}), bd.get("boss"), nominative=False,
+            name_fn=lambda ab: self.tr_name(None, ability_id=ab), label=name))
         h.append(self.auto_heal_section(bd.get("boss"), suffix))
         h.append("</main>")
         h.append(self.foot("".join(js_all)))
