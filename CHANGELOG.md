@@ -3,6 +3,19 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.11] — 2026-06-19
+
+- **Prepull / premature-engagement detection ABANDONED — do not build.** The two
+  WCL signatures (a boss-named TAP segment, an early `Melee` death) are BLIND to
+  PROXIMITY pulls (zone aggro: the raid walks into range without tapping or dying),
+  so any tally is a non-exhaustive sample masquerading as a firm count = false
+  numbers, and proximity is not recoverable from WCL (no player coordinates).
+  `interpretation-traps.md` rule 6 flipped to a do-not-build warning (officers get,
+  at most, a raw early-death ledger, never a ranked recidivist list). Matching
+  caveats live in `wcl-api-gotchas.md` + `extraction_manifest.md` (shipped with
+  1.2.10, shared files). Removed from the EdR CRs (consolidated + soir-1), user
+  decision 2026-06-19.
+
 ## [1.2.10] — 2026-06-19
 
 - **Kicks: canonical pipeline replaces the simple table.** New `scripts/kicks.py`
