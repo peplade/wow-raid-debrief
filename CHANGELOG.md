@@ -3,6 +3,16 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.9] — 2026-06-19
+
+- **`scripts/pages.py` — per-pull boss timeline charts made legible.** The rotated
+  `☠ <player>` death labels overlapped into an unreadable block on cascade pulls
+  (15+ deaths in a few seconds). Death markers are now **dashed lines only** (they
+  still show death timing + the cascade cluster visually); the names + killing blows
+  live in the deaths table directly below the chart. Added: **Y-axis formatter**
+  (`90 000 000` → `90 M`), and a **legend caption** under each chart (dégâts subis/s ·
+  phase · mort · CD de raid). The X-axis already showed m:ss.
+
 ## [1.2.8] — 2026-06-19
 
 Backport from the EdR Sha 25H review pass (user caught mis-classified mechanics

@@ -340,15 +340,13 @@ class Gen:
                                        "color": "#e8b923",
                                        "backgroundColor": "rgba(20,23,28,.85)",
                                        "font": {"size": 10}}}
+        # Death markers = dashed lines only (show timing + the cascade cluster);
+        # the names/killing-blows live in the deaths table right below. Rotated
+        # per-death text labels overlapped into an unreadable block on cascades.
         for i, d in enumerate(pull.get("deaths") or []):
             ann[f"d{i}"] = {"type": "line", "xMin": d["t"], "xMax": d["t"],
-                            "borderColor": "rgba(224,116,79,.8)", "borderWidth": 1,
-                            "borderDash": [4, 3],
-                            "label": {"display": True, "content": "☠ " + str(d["player"]),
-                                      "rotation": -90, "position": "end",
-                                      "color": "#e0744f",
-                                      "backgroundColor": "rgba(20,23,28,.7)",
-                                      "font": {"size": 9}}}
+                            "borderColor": "rgba(224,116,79,.45)", "borderWidth": 1,
+                            "borderDash": [4, 3]}
         for i, c in enumerate(pull.get("cds") or []):
             ann[f"c{i}"] = {"type": "point", "xValue": c["t"], "yValue": 0,
                             "backgroundColor": "#6db3f2", "radius": 4}
@@ -365,14 +363,22 @@ class Gen:
                     "x": {"type": "linear", "min": 0, "max": round(dur),
                           "ticks": {"color": "#8a93a2", "callback": "__TICK__"},
                           "grid": {"color": "#2a2f3a"}},
-                    "y": {"ticks": {"color": "#8a93a2"}, "grid": {"color": "#2a2f3a"}}},
+                    "y": {"ticks": {"color": "#8a93a2", "callback": "__YTICK__"},
+                          "grid": {"color": "#2a2f3a"}}},
                 "plugins": {"legend": {"display": False},
                             "annotation": {"annotations": ann}}}}
         js = json.dumps(cfg, ensure_ascii=False)
         js = js.replace('"__TICK__"',
                         "v=>`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`")
+        js = js.replace('"__YTICK__"',
+                        "v=>v>=1e6?(v/1e6)+' M':v>=1e3?(v/1e3)+' k':v")
+        leg = ('<div class="legend">'
+               '<b style="color:#e0744f">▬</b> dégâts subis par le raid / s'
+               ' · <b style="color:#e8b923">│</b> phase'
+               ' · <b style="color:#e0744f">┊</b> mort <span class="mut">(qui + coup → table)</span>'
+               ' · <b style="color:#6db3f2">●</b> CD de raid</div>')
         return (f'<div class="chartbox" style="height:{h}px">'
-                f'<canvas id="{cid}"></canvas></div>',
+                f'<canvas id="{cid}"></canvas></div>{leg}',
                 f"tlChart('{cid}',{js});\n")
 
     def deaths_table(self, deaths, label_col=None):
