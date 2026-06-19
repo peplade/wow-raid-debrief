@@ -34,6 +34,7 @@ checklist item applied to a role/context where it is pointless.
 | F | Misleading IDs | cast id != debuff id; glyph variants; base+empowered pairs | a DoT logging under a different id than its cast; empowered spell pairs that must be summed |
 | G | Absorb/HPS illusions | absorbs, smart heals and sniping distort HPS comparisons | discipline absorbs vs throughput healers; healer HPS vs tops is INDICATIVE only |
 | H | Encounter-relative thresholds | a KPI's "good" value depends on the fight, not the spec | DoT uptime on target-swap bosses: top-1 parses themselves drop to 40-66% (vs 90%+ on stationary bosses) — never grade a maintenance KPI red without a same-encounter top reference next to it |
+| I | Unverified classification | a mechanic's avoidable/reducible/raid-wide/soak label OR its "how it works" is taken from the zone ref / memory WITHOUT cross-check — the ref `class` is a HYPOTHESIS, not ground truth | "avoidable" on a mechanic the log shows hitting ~all the raid each wave (= raid-wide, mitigate with CDs); évitable↔réductible swapped (Unstable Corruption = dodgeable bolts; Collapsing Rift = the cost of YOUR close, CD-only); "harmless periodic" on a player-driven cost. Real double-failure 2026-06: Sha rift pair + Bursting Pride mis-labeled in the ref, shipped, verifier missed it. Proof = per-wave distinct-target count in the log + Wowhead tooltip radius/target + an encounter guide |
 
 ## THE checklist (mandatory before publishing any reproach)
 
@@ -50,6 +51,16 @@ checklist item applied to a role/context where it is pointless.
    gameplay claim. "Obvious" is not a measurement.
 5. **Equal conditions if comparing players?** Both alive, same assignments,
    no eviction/asymmetric phase, kills only (classes D/E/G).
+6. **Is every displayed mechanic CLASSIFICATION and description cross-checked?**
+   (class I) Before printing any "avoidable / reducible / raid-wide / soak"
+   label or any "how it works" sentence: (a) count distinct targets per ~2 s
+   wave in the log (`deep_dmg_taken` grouped by a time bucket) — ~all of the
+   raid each wave = raid-wide (CDs, NOT avoidable); a handful = positional /
+   avoidable; (b) confirm against an authoritative source (Wowhead MoP-Classic
+   tooltip radius/target + an encounter guide, e.g. Icy Veins/Wowpedia). The
+   zone-ref `class` is a starting hypothesis you VERIFY, never a citation.
+   A label the log or source contradicts is corrected before publish — this is
+   not optional, it is the rule that the rift/Bursting-Pride double-failure broke.
 
 If every check passes -> publishable fault.
 If any check fails -> the finding flips POSITIVE (they played it right) or

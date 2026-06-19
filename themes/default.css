@@ -25,6 +25,16 @@ article.boss{background:var(--panel);border:1px solid var(--line);border-radius:
 article.boss>header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 article.boss h3{margin:0;font-size:16px}
 .bbody{padding:12px 18px 16px}
+/* Collapsible pulls: wipes collapsed by default, kill open. */
+details.boss{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:14px 0;overflow:hidden}
+details.boss>summary{display:flex;align-items:center;gap:14px;padding:12px 18px;cursor:pointer;list-style:none;flex-wrap:wrap}
+details.boss>summary::-webkit-details-marker{display:none}
+details.boss>summary::before{content:"\25B8";color:var(--mut);font-size:13px;transition:transform .15s;flex:0 0 auto}
+details.boss[open]>summary::before{transform:rotate(90deg)}
+details.boss[open]>summary{border-bottom:1px solid var(--line)}
+details.boss>summary:hover{background:#1e232d}
+details.boss>summary:hover .psum{color:var(--acc)}
+details.boss .psum{font-size:15px;font-weight:600;margin-right:auto}
 .pbadge{min-width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
 .pbadge.kill{background:#173321;color:var(--green);border:1px solid #1f5a36}
 .pbadge.wipe{background:#332017;color:var(--red);border:1px solid #5a2f1f}

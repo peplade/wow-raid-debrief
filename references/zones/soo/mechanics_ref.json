@@ -327,10 +327,10 @@
    },
    "147198": {
     "name": "Unstable Corruption",
-    "class": "reducible",
-    "how": "pulse of unclosed HM rifts: close the rifts (fixed assignments) — 30 deaths on a 6-pull learning block measured",
+    "class": "avoidable",
+    "how": "Bolt de faille ouverte (Rift of Corruption tire ~toutes les 5 s, rayon 2 y, Ombre) : ESQUIVABLE en se répartissant lâchement dans la salle ; fermer les failles supprime la source. Mort ici = positionnement/spread, pas un heal-check.",
     "target": "all",
-    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+    "source_ref": "Wowhead mop-classic spell=147198/147388 + Icy Veins/Wowpedia Sha of Pride guide + log per-wave target count (147198 médiane 2/25 = bolts esquivables ; 147388 = coût du close, rayon 8y, applique Weakened Resolve 147207 lockout 60s) — cross-check 2026-06-19"
    },
    "149031": {
     "name": "Ethereal Corruption",
@@ -348,10 +348,17 @@
    },
    "147388": {
     "name": "Collapsing Rift",
-    "class": "avoidable",
-    "how": "HM rift collapse: step away",
+    "class": "reducible",
+    "how": "Explosion subie en FERMANT une faille (on marche dessus, rayon 8 y, Ombre) : NON-esquivable pour le closer (c'est le coût du close) — à mitiger par CD perso/marge de vie ; applique Weakened Resolve (147207) = 1 fermeture/min/joueur.",
     "target": "all",
-    "source_ref": "measured on a 25H learning night (deep events), 2026-06"
+    "source_ref": "Wowhead mop-classic spell=147198/147388 + Icy Veins/Wowpedia Sha of Pride guide + log per-wave target count (147198 médiane 2/25 = bolts esquivables ; 147388 = coût du close, rayon 8y, applique Weakened Resolve 147207 lockout 60s) — cross-check 2026-06-19"
+   },
+   "145320": {
+    "name": "Projection",
+    "class": "unavoidable",
+    "how": "Pulse Ombre RAID-WIDE (rayon 500 y, ~24/25 joueurs touchés/vague) : pic à encaisser (heal + CDs de raid), PAS du placement ; concentre les wipes tardifs ~240 s.",
+    "target": "all",
+    "source_ref": "Wowhead mop-classic spell=145320 (Shadow, 500 y) + log per-wave count médiane raid-entier — cross-check 2026-06"
    }
   },
   "notes_hm": "HM : Banishment 145215 (spec L700, DBM 37.5) — le banni part dans un realm dont le tick (Ethereal Corruption 149031) pesait 72 % du brut 25H, exclu du modèle heal car auto-géré/absorbé (sha_of_pride_ai.go L34-37) ; Pride monte plus vite ; rifts HM = Collapsing Rift 147388 + Unstable Corruption 147198, canal P6 HM-only (35.3k DTPS 10H — sha_of_pride_ai.go L31-32, L120). Mécanique centrale : énergie Pride par joueur → à 100, Overcome (MC, P7 — spec L705). Buff à exploiter : Gift of the Titans → stacker les giftés = Power of the Titans, +15 % dégâts +15 % haste 15s/~25s (spec L122/L136-140, modélisé +12 % DPS Ret). Tank : Wounded Pride 144358 (spec L709, DBM 30). Sol à éviter : Bursting Pride 144911 (spec L711).",

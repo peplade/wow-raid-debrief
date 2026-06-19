@@ -51,6 +51,7 @@ LOCALES = {
         "night_of": "night of", "pulls": "pulls", "kill": "kill", "kills": "kills",
         "combat_time": "combat time", "deaths": "deaths", "wipe": "wipe",
         "fight_remaining": "% of fight remaining", "log": "log ↗",
+        "wipes_collapsed_hint": "Wipes are collapsed — click a pull to expand its timeline.",
         "synthesis": "Synthesis", "no_death": "No death.",
         "th_time": "t", "th_player": "player", "th_killing_blow": "killing blow",
         "th_last10": "last 10 seconds (damage taken)",
@@ -103,6 +104,7 @@ LOCALES = {
         "night_of": "soirée du", "pulls": "pulls", "kill": "kill", "kills": "kills",
         "combat_time": "temps de combat", "deaths": "morts", "wipe": "wipe",
         "fight_remaining": "% du combat restant", "log": "log ↗",
+        "wipes_collapsed_hint": "Les wipes sont repliés — cliquer un pull pour déplier sa timeline.",
         "synthesis": "Synthèse", "no_death": "Aucune mort.",
         "th_time": "t", "th_player": "joueur", "th_killing_blow": "coup fatal",
         "th_last10": "10 dernières secondes (dégâts encaissés)",
@@ -566,6 +568,8 @@ class Gen:
         if syn:
             h.append(f"<h2>{L['synthesis']}</h2><div class='panel'>{syn}</div>")
         h.append(self.frag("boss", ckey, "intro.html"))
+        if any(not p["kill"] for p in pulls_) and any(p["kill"] for p in pulls_):
+            h.append(f"<p class='mut' style='margin:6px 0 0'>{L['wipes_collapsed_hint']}</p>")
         for p in pulls_:
             res = ("KILL" if p["kill"] else
                    f"{L['wipe']} — {p['fight_pct']:.1f} {L['fight_remaining']}")
@@ -573,11 +577,14 @@ class Gen:
             pcode = p.get("report") or self.code
             nb = (f" <span class='mut'>· {L['night_label']} {p['night']}</span>"
                   if len(self.codes) > 1 and p.get("night") else "")
-            h.append(f"""<article class="boss"><header>
+            # Wipes collapsed by default (chart lazy-renders on expand via
+            # tlChart IntersectionObserver); the kill stays open.
+            op = " open" if p["kill"] else ""
+            h.append(f"""<details class="boss"{op}><summary>
 <span class="pbadge {cls}">#{p['pull']}</span>
-<h3>{fmt_dur(p['duration_s'])} · {res}{nb}
- <a class="mut" href="{self.wcl_link(pcode)}#fight={p['fight_id']}">{L['log']}</a></h3>
-</header><div class="bbody">""")
+<span class="psum">{fmt_dur(p['duration_s'])} · {res}{nb}</span>
+<a class="mut" href="{self.wcl_link(pcode)}#fight={p['fight_id']}">{L['log']}</a>
+</summary><div class="bbody">""")
             ch, js = self.timeline_pull_chart(
                 f"tl{enc_id}{suffix}{p['pull']}", p,
                 self.dtps_for(pcode, p["fight_id"]))
@@ -588,7 +595,7 @@ class Gen:
                 h.append(f"<div class='panel note'>{note}</div>")
             h.append(ext.pull_dossier_block(self, p, pcode))
             h.append(self.deaths_table(p["deaths"]))
-            h.append("</div></article>")
+            h.append("</div></details>")
         h.append(self.frag("boss", ckey, "sections.html"))
         h.append(ext.nominative_section(self, bd.get("boss")))
         h.append(self.auto_avoidable_section(bd.get("boss"), suffix))

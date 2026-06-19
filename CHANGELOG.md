@@ -3,6 +3,40 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.8] — 2026-06-19
+
+Backport from the EdR Sha 25H review pass (user caught mis-classified mechanics
+in the shipped CR — a DOUBLE-FAILURE: generator shipped them from the ref, the
+`wow-cr-verifier` waved them through trusting the same ref). Root-cause fixes:
+
+- **DOCTRINE — mechanic classification is a hypothesis, not a citation.** A ref
+  `class` (avoidable/reducible/raid-wide/soak/dispel) or "how" must be
+  cross-checked BEFORE display against (a) the log's per-wave distinct-target
+  count (`deep_dmg_taken` bucketed ~2 s: ~all the raid/wave = raid-wide → CDs,
+  NOT avoidable; a few = positional/avoidable) AND (b) an authoritative source
+  (Wowhead MoP-Classic tooltip + encounter guide). Gravé : `interpretation-traps.md`
+  **trap class I + checklist item 6**, `methodology.md` ("classification = a
+  hypothesis to verify"). The `wow-cr-verifier` agent (in consumer `.claude/agents/`)
+  gets a matching **active classification audit** in its Mécaniques lens + an
+  authoritative-source row.
+- **`zones/soo/mechanics_ref.json` — Sha of Pride classification corrected**
+  (verified Wowhead + Icy Veins/Wowpedia + log): Unstable Corruption 147198
+  `reducible`→**`avoidable`** (dodgeable bolts, 2 y, ~2/25 per wave); Collapsing
+  Rift 147388 `avoidable`→**`reducible`** (the *cost of your close* by walking
+  over a rift, 8 y, CD-mitigated; applies Weakened Resolve 147207 = 1 close/min);
+  Bursting Pride 144911 stays `avoidable` (pool, 3/25 — the raid-wide one is
+  Swelling Pride 144400 at 24/25, FR-name collision fracassant↔croissant);
+  **Projection 145320 added** (raid-wide pulse, 500 y, unavoidable).
+- **`zones/soo/traps.md` — Sha rift entry rewritten**: "soak" framing dropped for
+  the real mechanic (open rift → avoidable Unstable Corruption; close by walking
+  over → Collapsing Rift + Weakened Resolve lockout; lever = close-COVERAGE
+  breadth; count real closes via 147207, NOT 147388-taken which includes 8 y splash).
+- **`scripts/pages.py` + `themes/default.css` — collapsible pulls.** Wipes now
+  render as `<details>` collapsed by default (kill stays `open`); the timeline
+  chart lazy-renders on expand (existing `tlChart` IntersectionObserver). New
+  locale `wipes_collapsed_hint` (en/fr). Long progression nights stop being a
+  wall of charts.
+
 ## [1.2.7] — 2026-06-19
 
 Backport from the EdR Sha of Pride 25H night (per-add participation feature +

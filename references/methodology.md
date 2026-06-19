@@ -121,6 +121,21 @@ Principle: **graph/table first, events only where grain demands it.**
    agree on id/cadence/target).
 5. Aggregate patterns (only to rank candidates — never publishable alone).
 
+## Mechanic classification is a HYPOTHESIS to verify, never a citation
+
+The zone-ref `class` (avoidable / reducible / raid-wide / soak / dispel) and its
+"how" are a STARTING POINT. Before any of them reaches a page, cross-check:
+1. **Per-wave distinct-target count in the log** — `deep_dmg_taken` bucketed by
+   ~2 s: median ≈ the whole raid each wave ⇒ **raid-wide** (mitigate with CDs,
+   NOT "avoidable"); a handful ⇒ positional / avoidable.
+2. **Authoritative tooltip** — Wowhead MoP-Classic `spell=<id>` (radius / target /
+   school) + an encounter guide (Icy Veins / Wowpedia) for the strategic role.
+
+A ref label the log or source contradicts is corrected, not shipped. This rule
+exists because the Sha rift pair (Unstable Corruption / Collapsing Rift) and
+Bursting Pride shipped MIS-classified from the ref and the verifier missed them
+(double-failure, 2026-06). See interpretation-traps class I + checklist item 6.
+
 ## Officers annex
 
 A separate unlisted page (noindex, token URL) for franker per-player notes
