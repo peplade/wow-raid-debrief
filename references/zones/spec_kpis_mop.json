@@ -1799,5 +1799,1228 @@
     "issue": "double id aura/passif (44544+112965 / 57761+44549) - matcher les DEUX cotes events buff"
    }
   ]
+ },
+ "Paladin-Retribution": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 85256,
+    "name": "Templar's Verdict"
+   },
+   {
+    "id": 53385,
+    "name": "Divine Storm"
+   },
+   {
+    "id": 35395,
+    "name": "Crusader Strike"
+   },
+   {
+    "id": 24275,
+    "name": "Hammer of Wrath"
+   },
+   {
+    "id": 20271,
+    "name": "Judgment"
+   },
+   {
+    "id": 122032,
+    "name": "Exorcism"
+   },
+   {
+    "id": 53595,
+    "name": "Hammer of the Righteous"
+   },
+   {
+    "id": 114158,
+    "name": "Light's Hammer"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 31803,
+    "name": "Censure",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 31884,
+    "name": "Avenging Wrath",
+    "cd_s": 180
+   },
+   {
+    "id": 86698,
+    "name": "Guardian of Ancient Kings",
+    "cd_s": 180
+   },
+   {
+    "id": 105809,
+    "name": "Holy Avenger",
+    "cd_s": 120
+   },
+   {
+    "id": 114916,
+    "name": "Execution Sentence",
+    "cd_s": 60
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 84963,
+    "name": "Inquisition"
+   },
+   {
+    "id": 59578,
+    "name": "The Art of War"
+   },
+   {
+    "id": 31884,
+    "name": "Avenging Wrath"
+   },
+   {
+    "id": 86700,
+    "name": "Ancient Power"
+   },
+   {
+    "id": 105809,
+    "name": "Holy Avenger"
+   },
+   {
+    "id": 146194,
+    "name": "Burst of Xuen"
+   },
+   {
+    "id": 137596,
+    "name": "Capacitance"
+   }
+  ]
+ },
+ "Paladin-Protection": {
+  "role": "tank",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 20271,
+    "name": "Judgment"
+   },
+   {
+    "id": 35395,
+    "name": "Crusader Strike"
+   },
+   {
+    "id": 31935,
+    "name": "Avenger's Shield"
+   },
+   {
+    "id": 119072,
+    "name": "Holy Wrath"
+   },
+   {
+    "id": 26573,
+    "name": "Consecration"
+   },
+   {
+    "id": 88263,
+    "name": "Hammer of the Righteous"
+   }
+  ],
+  "dots_uptime": [],
+  "cds_major": [
+   {
+    "id": 31884,
+    "name": "Avenging Wrath",
+    "cd_s": 180
+   },
+   {
+    "id": 105809,
+    "name": "Holy Avenger",
+    "cd_s": 120
+   },
+   {
+    "id": 86698,
+    "name": "Guardian of Ancient Kings",
+    "cd_s": 180
+   },
+   {
+    "id": 31850,
+    "name": "Ardent Defender",
+    "cd_s": 180
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 132403,
+    "name": "Shield of the Righteous"
+   },
+   {
+    "id": 114637,
+    "name": "Bastion of Glory"
+   },
+   {
+    "id": 85416,
+    "name": "Grand Crusader"
+   },
+   {
+    "id": 31884,
+    "name": "Avenging Wrath"
+   },
+   {
+    "id": 105809,
+    "name": "Holy Avenger"
+   },
+   {
+    "id": 137596,
+    "name": "Capacitance"
+   }
+  ]
+ },
+ "Warrior-Fury": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 23881,
+    "name": "Bloodthirst"
+   },
+   {
+    "id": 85288,
+    "name": "Raging Blow"
+   },
+   {
+    "id": 86346,
+    "name": "Colossus Smash"
+   },
+   {
+    "id": 100130,
+    "name": "Wild Strike"
+   },
+   {
+    "id": 78,
+    "name": "Heroic Strike"
+   },
+   {
+    "id": 5308,
+    "name": "Execute"
+   },
+   {
+    "id": 107570,
+    "name": "Storm Bolt"
+   },
+   {
+    "id": 1680,
+    "name": "Whirlwind"
+   },
+   {
+    "id": 50622,
+    "name": "Bladestorm"
+   },
+   {
+    "id": 18499,
+    "name": "Berserker Rage"
+   },
+   {
+    "id": 57755,
+    "name": "Heroic Throw"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 115767,
+    "name": "Deep Wounds",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 1719,
+    "name": "Recklessness",
+    "cd_s": 180
+   },
+   {
+    "id": 107574,
+    "name": "Avatar",
+    "cd_s": 180
+   },
+   {
+    "id": 113344,
+    "name": "Bloodbath",
+    "cd_s": 60
+   },
+   {
+    "id": 114207,
+    "name": "Skull Banner",
+    "cd_s": 180
+   },
+   {
+    "id": 118000,
+    "name": "Dragon Roar",
+    "cd_s": 60
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 12880,
+    "name": "Enrage"
+   },
+   {
+    "id": 131116,
+    "name": "Raging Blow!"
+   },
+   {
+    "id": 46916,
+    "name": "Bloodsurge"
+   },
+   {
+    "id": 146194,
+    "name": "Burst of Xuen"
+   },
+   {
+    "id": 138759,
+    "name": "Feathers of Fury"
+   },
+   {
+    "id": 138760,
+    "name": "Massive"
+   },
+   {
+    "id": 137596,
+    "name": "Capacitance"
+   },
+   {
+    "id": 96229,
+    "name": "Synapse Springs"
+   }
+  ]
+ },
+ "Warrior-Protection": {
+  "role": "tank",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 23922,
+    "name": "Shield Slam"
+   },
+   {
+    "id": 6572,
+    "name": "Revenge"
+   },
+   {
+    "id": 20243,
+    "name": "Devastate"
+   },
+   {
+    "id": 6343,
+    "name": "Thunder Clap"
+   },
+   {
+    "id": 845,
+    "name": "Cleave"
+   },
+   {
+    "id": 78,
+    "name": "Heroic Strike"
+   },
+   {
+    "id": 18499,
+    "name": "Berserker Rage"
+   },
+   {
+    "id": 355,
+    "name": "Taunt"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 115767,
+    "name": "Deep Wounds",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 871,
+    "name": "Shield Wall",
+    "cd_s": 180
+   },
+   {
+    "id": 12975,
+    "name": "Last Stand",
+    "cd_s": 180
+   },
+   {
+    "id": 1160,
+    "name": "Demoralizing Shout",
+    "cd_s": 60
+   },
+   {
+    "id": 2565,
+    "name": "Shield Block",
+    "cd_s": 2
+   },
+   {
+    "id": 112048,
+    "name": "Shield Barrier",
+    "cd_s": 2
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 12880,
+    "name": "Enrage"
+   },
+   {
+    "id": 50227,
+    "name": "Sword and Board"
+   },
+   {
+    "id": 122510,
+    "name": "Ultimatum"
+   },
+   {
+    "id": 84619,
+    "name": "Hold the Line"
+   },
+   {
+    "id": 132404,
+    "name": "Shield Block"
+   },
+   {
+    "id": 139170,
+    "name": "Eye of Brutality"
+   }
+  ]
+ },
+ "Warlock-Affliction": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 103103,
+    "name": "Malefic Grasp"
+   },
+   {
+    "id": 1120,
+    "name": "Drain Soul"
+   },
+   {
+    "id": 48181,
+    "name": "Haunt"
+   },
+   {
+    "id": 980,
+    "name": "Agony"
+   },
+   {
+    "id": 172,
+    "name": "Corruption"
+   },
+   {
+    "id": 30108,
+    "name": "Unstable Affliction"
+   },
+   {
+    "id": 119678,
+    "name": "Soul Swap"
+   },
+   {
+    "id": 74434,
+    "name": "Soulburn"
+   },
+   {
+    "id": 1454,
+    "name": "Life Tap"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 980,
+    "name": "Agony",
+    "target": "enemy"
+   },
+   {
+    "id": 146739,
+    "name": "Corruption",
+    "target": "enemy"
+   },
+   {
+    "id": 30108,
+    "name": "Unstable Affliction",
+    "target": "enemy"
+   },
+   {
+    "id": 48181,
+    "name": "Haunt",
+    "target": "enemy"
+   },
+   {
+    "id": 27243,
+    "name": "Seed of Corruption",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 113860,
+    "name": "Dark Soul: Misery",
+    "cd_s": 120
+   },
+   {
+    "id": 18540,
+    "name": "Summon Doomguard",
+    "cd_s": 600
+   },
+   {
+    "id": 1122,
+    "name": "Summon Infernal",
+    "cd_s": 600
+   },
+   {
+    "id": 96230,
+    "name": "Synaptic Springs",
+    "cd_s": 60
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 113860,
+    "name": "Dark Soul: Misery"
+   },
+   {
+    "id": 86211,
+    "name": "Soul Swap"
+   },
+   {
+    "id": 74434,
+    "name": "Soulburn"
+   },
+   {
+    "id": 17941,
+    "name": "Shadow Trance"
+   },
+   {
+    "id": 146198,
+    "name": "Renewing Mists trinket"
+   },
+   {
+    "id": 138788,
+    "name": "Electrified trinket"
+   }
+  ]
+ },
+ "Warlock-Destruction": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 29722,
+    "name": "Incinerate"
+   },
+   {
+    "id": 116858,
+    "name": "Chaos Bolt"
+   },
+   {
+    "id": 348,
+    "name": "Immolate"
+   },
+   {
+    "id": 17962,
+    "name": "Conflagrate"
+   },
+   {
+    "id": 17877,
+    "name": "Shadowburn"
+   },
+   {
+    "id": 104232,
+    "name": "Rain of Fire"
+   },
+   {
+    "id": 108683,
+    "name": "Fire and Brimstone"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 348,
+    "name": "Immolate",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 113858,
+    "name": "Dark Soul: Instability",
+    "cd_s": 120
+   },
+   {
+    "id": 18540,
+    "name": "Summon Doomguard",
+    "cd_s": 600
+   },
+   {
+    "id": 1122,
+    "name": "Summon Infernal",
+    "cd_s": 600
+   },
+   {
+    "id": 96230,
+    "name": "Synaptic Springs",
+    "cd_s": 60
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 113858,
+    "name": "Dark Soul: Instability"
+   },
+   {
+    "id": 117828,
+    "name": "Backdraft"
+   },
+   {
+    "id": 138788,
+    "name": "Electrified trinket"
+   },
+   {
+    "id": 146198,
+    "name": "Renewing Mists trinket"
+   },
+   {
+    "id": 137590,
+    "name": "Tempus Repit"
+   },
+   {
+    "id": 146046,
+    "name": "Amplified"
+   }
+  ]
+ },
+ "Mage-Arcane": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 30451,
+    "name": "Arcane Blast"
+   },
+   {
+    "id": 7268,
+    "name": "Arcane Missiles"
+   },
+   {
+    "id": 44425,
+    "name": "Arcane Barrage"
+   },
+   {
+    "id": 1449,
+    "name": "Arcane Explosion"
+   }
+  ],
+  "dots_uptime": [],
+  "cds_major": [
+   {
+    "id": 12042,
+    "name": "Arcane Power",
+    "cd_s": 90
+   },
+   {
+    "id": 108978,
+    "name": "Alter Time",
+    "cd_s": 180
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 36032,
+    "name": "Arcane Charge"
+   },
+   {
+    "id": 79683,
+    "name": "Arcane Missiles!"
+   },
+   {
+    "id": 55342,
+    "name": "Mirror Image"
+   },
+   {
+    "id": 5405,
+    "name": "Evocation"
+   },
+   {
+    "id": 96230,
+    "name": "Synapse Springs"
+   }
+  ]
+ },
+ "Mage-Fire": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 133,
+    "name": "Fireball"
+   },
+   {
+    "id": 108853,
+    "name": "Inferno Blast"
+   },
+   {
+    "id": 11366,
+    "name": "Pyroblast"
+   },
+   {
+    "id": 2948,
+    "name": "Scorch"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 12654,
+    "name": "Ignite",
+    "target": "enemy"
+   },
+   {
+    "id": 11366,
+    "name": "Pyroblast (DoT)",
+    "target": "enemy"
+   },
+   {
+    "id": 83853,
+    "name": "Combustion (DoT)",
+    "target": "enemy"
+   },
+   {
+    "id": 44457,
+    "name": "Living Bomb",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 11129,
+    "name": "Combustion",
+    "cd_s": 45
+   },
+   {
+    "id": 108978,
+    "name": "Alter Time",
+    "cd_s": 180
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 48107,
+    "name": "Heating Up"
+   },
+   {
+    "id": 48108,
+    "name": "Pyroblast! (Hot Streak)"
+   },
+   {
+    "id": 55342,
+    "name": "Mirror Image"
+   },
+   {
+    "id": 12051,
+    "name": "Evocation"
+   },
+   {
+    "id": 96230,
+    "name": "Synapse Springs"
+   }
+  ]
+ },
+ "Priest-Holy": {
+  "role": "healer",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 139,
+    "name": "Renew"
+   },
+   {
+    "id": 34861,
+    "name": "Circle of Healing"
+   },
+   {
+    "id": 33076,
+    "name": "Prayer of Healing"
+   },
+   {
+    "id": 596,
+    "name": "Prayer of Mending"
+   },
+   {
+    "id": 2061,
+    "name": "Flash Heal"
+   },
+   {
+    "id": 2060,
+    "name": "Greater Heal"
+   },
+   {
+    "id": 2050,
+    "name": "Heal"
+   },
+   {
+    "id": 88684,
+    "name": "Holy Word: Serenity"
+   },
+   {
+    "id": 88685,
+    "name": "Holy Word: Sanctuary"
+   },
+   {
+    "id": 110744,
+    "name": "Divine Star"
+   },
+   {
+    "id": 81208,
+    "name": "Chakra: Serenity"
+   },
+   {
+    "id": 81206,
+    "name": "Chakra: Sanctuary"
+   }
+  ],
+  "dots_uptime": [],
+  "cds_major": [
+   {
+    "id": 64843,
+    "name": "Divine Hymn",
+    "cd_s": 180
+   },
+   {
+    "id": 47788,
+    "name": "Guardian Spirit",
+    "cd_s": 180
+   },
+   {
+    "id": 724,
+    "name": "Lightwell",
+    "cd_s": 180
+   },
+   {
+    "id": 64901,
+    "name": "Hymn of Hope",
+    "cd_s": 360
+   },
+   {
+    "id": 123040,
+    "name": "Mindbender",
+    "cd_s": 60
+   },
+   {
+    "id": 34433,
+    "name": "Shadowfiend",
+    "cd_s": 180
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 77489,
+    "name": "Echo of Light"
+   },
+   {
+    "id": 139,
+    "name": "Renew"
+   },
+   {
+    "id": 41635,
+    "name": "Prayer of Mending"
+   },
+   {
+    "id": 126154,
+    "name": "Lightwell Renew"
+   },
+   {
+    "id": 81208,
+    "name": "Chakra: Serenity"
+   },
+   {
+    "id": 81206,
+    "name": "Chakra: Sanctuary"
+   },
+   {
+    "id": 88684,
+    "name": "Holy Word: Serenity"
+   }
+  ]
+ },
+ "Monk-Mistweaver": {
+  "role": "healer",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 115175,
+    "name": "Soothing Mist"
+   },
+   {
+    "id": 116995,
+    "name": "Surging Mist"
+   },
+   {
+    "id": 124682,
+    "name": "Enveloping Mist"
+   },
+   {
+    "id": 119611,
+    "name": "Renewing Mist"
+   },
+   {
+    "id": 116670,
+    "name": "Uplift"
+   },
+   {
+    "id": 101546,
+    "name": "Spinning Crane Kick"
+   },
+   {
+    "id": 117952,
+    "name": "Crackling Jade Lightning"
+   },
+   {
+    "id": 100784,
+    "name": "Blackout Kick"
+   },
+   {
+    "id": 100787,
+    "name": "Tiger Palm"
+   }
+  ],
+  "dots_uptime": [],
+  "cds_major": [
+   {
+    "id": 115310,
+    "name": "Revival",
+    "cd_s": 180
+   },
+   {
+    "id": 116849,
+    "name": "Life Cocoon",
+    "cd_s": 120
+   },
+   {
+    "id": 116680,
+    "name": "Thunder Focus Tea",
+    "cd_s": 45
+   },
+   {
+    "id": 123904,
+    "name": "Invoke Xuen",
+    "cd_s": 180
+   },
+   {
+    "id": 124081,
+    "name": "Chi-Ji",
+    "cd_s": 180
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 119611,
+    "name": "Renewing Mist"
+   },
+   {
+    "id": 132120,
+    "name": "Enveloping Mist"
+   },
+   {
+    "id": 115867,
+    "name": "Mana Tea"
+   },
+   {
+    "id": 118674,
+    "name": "Vital Mists"
+   },
+   {
+    "id": 127722,
+    "name": "Serpent's Zeal"
+   },
+   {
+    "id": 146200,
+    "name": "Spirit of Chi-Ji"
+   }
+  ]
+ },
+ "Hunter-BeastMastery": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 34026,
+    "name": "Kill Command"
+   },
+   {
+    "id": 3044,
+    "name": "Arcane Shot"
+   },
+   {
+    "id": 77767,
+    "name": "Cobra Shot"
+   },
+   {
+    "id": 2643,
+    "name": "Multi-Shot"
+   },
+   {
+    "id": 53351,
+    "name": "Kill Shot"
+   },
+   {
+    "id": 117050,
+    "name": "Glaive Toss"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 118253,
+    "name": "Serpent Sting",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 19574,
+    "name": "Bestial Wrath",
+    "cd_s": 60
+   },
+   {
+    "id": 3045,
+    "name": "Rapid Fire",
+    "cd_s": 180
+   },
+   {
+    "id": 121818,
+    "name": "Stampede",
+    "cd_s": 300
+   },
+   {
+    "id": 131894,
+    "name": "A Murder of Crows",
+    "cd_s": 120
+   },
+   {
+    "id": 120679,
+    "name": "Dire Beast",
+    "cd_s": 30
+   },
+   {
+    "id": 126734,
+    "name": "Synapse Springs",
+    "cd_s": 60
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 138737,
+    "name": "Frenzy"
+   },
+   {
+    "id": 82692,
+    "name": "Focus Fire"
+   },
+   {
+    "id": 34471,
+    "name": "The Beast Within"
+   },
+   {
+    "id": 53257,
+    "name": "Cobra Strikes"
+   },
+   {
+    "id": 138756,
+    "name": "Renataki trinket"
+   },
+   {
+    "id": 138938,
+    "name": "Bad Juju"
+   }
+  ]
+ },
+ "DeathKnight-Unholy": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 85948,
+    "name": "Festering Strike"
+   },
+   {
+    "id": 55090,
+    "name": "Scourge Strike"
+   },
+   {
+    "id": 47541,
+    "name": "Death Coil"
+   },
+   {
+    "id": 130736,
+    "name": "Soul Reaper"
+   },
+   {
+    "id": 43265,
+    "name": "Death and Decay"
+   },
+   {
+    "id": 77575,
+    "name": "Outbreak"
+   },
+   {
+    "id": 45462,
+    "name": "Pestilence"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 55078,
+    "name": "Blood Plague",
+    "target": "enemy"
+   },
+   {
+    "id": 55095,
+    "name": "Frost Fever",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 49206,
+    "name": "Summon Gargoyle",
+    "cd_s": 180
+   },
+   {
+    "id": 63560,
+    "name": "Dark Transformation",
+    "cd_s": 60
+   },
+   {
+    "id": 49016,
+    "name": "Unholy Frenzy",
+    "cd_s": 180
+   },
+   {
+    "id": 47568,
+    "name": "Empower Rune Weapon",
+    "cd_s": 300
+   },
+   {
+    "id": 126734,
+    "name": "Synapse Springs",
+    "cd_s": 60
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 63560,
+    "name": "Dark Transformation"
+   },
+   {
+    "id": 81340,
+    "name": "Sudden Doom"
+   },
+   {
+    "id": 91342,
+    "name": "Shadow Infusion"
+   },
+   {
+    "id": 53365,
+    "name": "Unholy Strength"
+   },
+   {
+    "id": 138759,
+    "name": "Feathers of Fury trinket"
+   }
+  ]
+ },
+ "Shaman-Elemental": {
+  "role": "dps",
+  "gcd_base_ms": 1500,
+  "casts_rotation": [
+   {
+    "id": 403,
+    "name": "Lightning Bolt"
+   },
+   {
+    "id": 51505,
+    "name": "Lava Burst"
+   },
+   {
+    "id": 8042,
+    "name": "Earth Shock"
+   },
+   {
+    "id": 421,
+    "name": "Chain Lightning"
+   },
+   {
+    "id": 114074,
+    "name": "Lava Beam"
+   },
+   {
+    "id": 73680,
+    "name": "Unleash Elements"
+   }
+  ],
+  "dots_uptime": [
+   {
+    "id": 8050,
+    "name": "Flame Shock",
+    "target": "enemy"
+   }
+  ],
+  "cds_major": [
+   {
+    "id": 114049,
+    "name": "Ascendance",
+    "cd_s": 180
+   },
+   {
+    "id": 2894,
+    "name": "Fire Elemental Totem",
+    "cd_s": 300
+   },
+   {
+    "id": 16166,
+    "name": "Elemental Mastery",
+    "cd_s": 90
+   },
+   {
+    "id": 120668,
+    "name": "Stormlash Totem",
+    "cd_s": 300
+   },
+   {
+    "id": 51490,
+    "name": "Thunderstorm",
+    "cd_s": 45
+   },
+   {
+    "id": 126734,
+    "name": "Synapse Springs",
+    "cd_s": 60
+   }
+  ],
+  "buffs_track": [
+   {
+    "id": 77762,
+    "name": "Lava Surge"
+   },
+   {
+    "id": 324,
+    "name": "Lightning Shield"
+   },
+   {
+    "id": 114050,
+    "name": "Ascendance"
+   },
+   {
+    "id": 138786,
+    "name": "Wushoolay trinket"
+   }
+  ]
  }
 }

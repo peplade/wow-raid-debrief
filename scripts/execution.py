@@ -241,6 +241,28 @@ def main():
                         agg[who[0]] += r["s"] or 0
                 bo[kind] = {nm: round(v / 1e6, 1) for nm, v in
                             sorted(agg.items(), key=lambda x: -x[1])}
+                if kind == "npc_dps":
+                    # per-add split + participation share (user ask: Sha of
+                    # Pride fragments vs big adds). Additive — leaves the lump
+                    # bo["npc_dps"] intact for existing consumers.
+                    sp = defaultdict(lambda: defaultdict(float))
+                    for r in db.execute(f"""SELECT fight_id, target_id,
+                            source_id, SUM({fld}) s FROM {table} WHERE
+                            report=? AND fight_id IN ({ph}) AND target_id
+                            IN ({','.join(map(str, aids))})
+                            GROUP BY fight_id, target_id, source_id""",
+                                        (code,)):
+                        who = comp[r["fight_id"]].get(r["source_id"])
+                        if who:
+                            sp[actor[r["target_id"]]][who[0]] += r["s"] or 0
+                    split = {}
+                    for an, pv in sp.items():
+                        tot = sum(pv.values()) or 1
+                        split[an] = [[nm, round(v / 1e6, 1),
+                                      round(100 * v / tot, 1)] for nm, v in
+                                     sorted(pv.items(), key=lambda x: -x[1])]
+                    if split:
+                        bo["npc_dps_split"] = split
 
             # trial entries
             tids = (zx.get("trial_auras") or {}).get(boss)

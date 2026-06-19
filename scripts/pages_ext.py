@@ -56,6 +56,10 @@ EXT_L = {
                       "the signal; tanks excluded, off-target is their job)"),
         "th_focus": "on the raid's target",
         "npc_dps": "Priority-add damage", "npc_heal": "Friendly-NPC healing",
+        "npc_dps_part": "Damage participation on adds", "th_share": "share",
+        "add_manif": "Manifestation of Pride (big adds)",
+        "add_frag": "Corrupted Fragment (rift adds)",
+        "add_reflet": "Reflection (Self-Reflection mirror)",
         "trials": "Trial entries",
         "trials_sub": ("orb soaks and the resource bar are NOT in the combat "
                        "log; entries are; durations only sporadically"),
@@ -123,6 +127,11 @@ EXT_L = {
         "th_focus": "sur la cible du raid",
         "npc_dps": "Dégâts sur les adds prioritaires",
         "npc_heal": "Soins sur les PNJ alliés",
+        "npc_dps_part": "Participation aux dégâts sur les adds",
+        "th_share": "% part",
+        "add_manif": "Manifestation d'Orgueil (gros adds)",
+        "add_frag": "Fragment corrompu (failles)",
+        "add_reflet": "Reflet (miroir Self-Reflection)",
         "trials": "Entrées en épreuve",
         "trials_sub": ("le soak d'orbes et la barre de ressource ne sont PAS "
                        "dans le log ; les entrées si ; les durées seulement "
@@ -323,12 +332,27 @@ def nominative_section(gen, boss_log_name):
         parts.append(table([X["th_player"], X["th_focus"]], rows))
 
     for key, title in (("npc_dps", X["npc_dps"]), ("npc_heal", X["npc_heal"])):
+        if ex.get(key + "_split"):
+            continue  # rendered per-add (with % share) below
         agg = ex.get(key) or {}
         if agg:
             parts.append("<h3>%s</h3>" % title)
             parts.append(table([X["th_player"], "M"],
                                [(esc(nm), v) for nm, v in
                                 list(agg.items())[:15]]))
+
+    split = ex.get("npc_dps_split") or {}
+    if split:
+        labels = {"Manifestation of Pride": X["add_manif"],
+                  "Corrupted Fragment": X["add_frag"],
+                  "Reflection": X["add_reflet"]}
+        for add_name, rows0 in split.items():
+            lbl = labels.get(add_name, gen.tr_name(add_name))
+            parts.append("<h3>%s — <small>%s</small></h3>" %
+                         (X["npc_dps_part"], lbl))
+            parts.append(table([X["th_player"], "M", X["th_share"]],
+                               [(esc(nm), "%.1f" % m, "%.1f %%" % p)
+                                for nm, m, p in rows0[:20]]))
 
     te = ex.get("trial_entries") or {}
     if te:

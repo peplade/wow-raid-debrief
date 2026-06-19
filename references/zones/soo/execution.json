@@ -37,7 +37,8 @@
     "Fallen Protectors": ["Rook Stonetoe", "Sun Tenderheart", "He Softfoot"]
   },
   "npc_dps_targets": {
-    "Immerseus": ["Sha Puddle", "Congealed Sha"]
+    "Immerseus": ["Sha Puddle", "Congealed Sha"],
+    "Sha of Pride": ["Manifestation of Pride", "Corrupted Fragment", "Reflection"]
   },
   "npc_heal_targets": {
     "Immerseus": ["Contaminated Puddle", "Lesser Contaminated Puddle"]

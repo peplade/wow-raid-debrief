@@ -3,6 +3,29 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.7] — 2026-06-19
+
+Backport from the EdR Sha of Pride 25H night (per-add participation feature +
+full roster spec coverage).
+
+- **`scripts/execution.py` + `scripts/pages_ext.py` + `zones/soo/execution.json`**
+  — NEW per-add **damage-participation split** (`npc_dps_split`): the NPC
+  participation engine now emits, per priority add, each player's damage AND
+  their **% share** of the raid's damage to that add (additive — the lumped
+  `npc_dps` stays for back-compat). Rendered as one labelled table per add
+  (abs + % share). `npc_dps_targets["Sha of Pride"]` added = Manifestation of
+  Pride (big adds) + Corrupted Fragment (rift adds) + Reflection (mirrors). Use
+  case: "who actually DPS'd the fragments vs the big adds vs the tank-soaked
+  reflets" — the reflet tank-dominance is the intended Vengeance assignment,
+  not an anomaly to flag.
+- **`zones/spec_kpis_mop.json`** — +13 specs (full MoP roster coverage):
+  Paladin Ret/Prot, Warrior Fury/Prot, Warlock Affli/Destro, Mage Arcane/Fire,
+  Priest Holy, Monk Mistweaver, Hunter BM, DK Unholy, Shaman Ele. Built from
+  the actual logged ability ids (empirical, cross-checked vs deep_cast/deep_aura)
+  + Hekili/wowsims/SimC sources. Fixes silent 0%-uptime and empty-bench on
+  rosters using these specs (the gap was hit hard by a 28-player GDKP — 13 of
+  20 played specs were missing).
+
 ## [1.2.6] — 2026-06-19
 
 Backport from extending the Sha of Pride page with per-pull damage-taken and
