@@ -3,6 +3,22 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.14] — 2026-06-19
+
+- **Evolution page: rich + dynamic, and it's a ROLLUP you must republish every
+  night.** `page_evolution` now renders the week-over-week page in full
+  (previously a lean table-only stub): per-player **percentile chart** and
+  **ilvl chart** with one series per week, a **strict comparable** section
+  (auto-picks the boss+difficulty killed in the most weeks — raw DPS is only
+  comparable same boss + same difficulty — and tables/charts per-player DPS Δ
+  from `parses`), the raid trajectory table, gear deltas and roster in/out.
+  Fully **dynamic over N weeks** — add a week by passing its workdir to
+  `evolution.py`/`pages.py --only evolution`, no code edits. Charts use the
+  shared `tlChart`/`CHART_JS` path (lazy-imported to avoid the pages↔pages_ext
+  cycle). Process lesson: deploying a raid night is NOT done until the
+  evolution rollup + guild hub are regenerated and redeployed — they do not
+  update themselves (a night shipped with the rollup left a week behind).
+
 ## [1.2.13] — 2026-06-19
 
 - **DTPS curves/stats: never derive from the WCL DamageTaken graph — use

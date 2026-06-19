@@ -86,6 +86,13 @@ EXT_L = {
         "th_pulls": "pulls (boss)", "th_kills": "kills", "th_wipes": "wipes",
         "th_prepot": "pre-pot", "new_items": "notable gear",
         "departed": "left roster", "arrived": "new to roster",
+        "evo_pctl_h": "Median percentile per week (latest in green)",
+        "evo_ilvl_h": "Average equipped ilvl, per player",
+        "evo_cmp_h": "Strict comparable",
+        "evo_cmp_intro": ("Same boss, same difficulty — the only raw-DPS "
+                          "comparable. %s %s, weeks: %s. DPS per player (k):"),
+        "th_dps_k": "DPS %s (k)", "th_delta": "Δ",
+        "evo_roster_h": "Roster", "th_roster": "present",
         "player_exec": "Mechanic execution",
         "pe_kicks": "kicks", "pe_switch_lat": "median add-switch latency",
         "pe_squats": "ground-AoE squats",
@@ -161,6 +168,13 @@ EXT_L = {
         "th_pulls": "pulls (boss)", "th_kills": "kills", "th_wipes": "wipes",
         "th_prepot": "pré-pot", "new_items": "loot notable",
         "departed": "sortis du roster", "arrived": "entrants",
+        "evo_pctl_h": "Percentile médian par semaine (dernière en vert)",
+        "evo_ilvl_h": "ilvl moyen équipé, par joueur",
+        "evo_cmp_h": "Comparable strict",
+        "evo_cmp_intro": ("Même boss, même difficulté — le seul comparable en "
+                          "DPS brut. %s %s, semaines : %s. DPS par joueur (k) :"),
+        "th_dps_k": "DPS %s (k)", "th_delta": "Δ",
+        "evo_roster_h": "Roster", "th_roster": "présents",
         "player_exec": "Exécution des mécaniques",
         "pe_kicks": "kicks", "pe_switch_lat": "latence de switch médiane",
         "pe_squats": "squats de zones au sol",
@@ -482,11 +496,22 @@ def page_evolution(gen):
     gear = gen.J("gear_evolution.json") or {}
     weeks = ev["weeks"]
     players = ev["players"]
+    n = len(weeks)
+    js = []
+    _PAL = ["#3a3f4a", "#6db3f2", "#e8b923", "#a371f7", "#f778ba", "#56d4dd"]
+
+    def wcol(i):
+        return "#3fb950" if i == n - 1 else _PAL[i % len(_PAL)]
+
+    def wshort(w):
+        return w["label"][-5:]
+
     h = [gen.head("%s — %s" % (X["evo_title"], gen.guild))]
     h.append("<header class='hero'><h1>%s — <em>%s</em></h1>"
              "<div class='sub'>%s</div></header><main>" % (
                  X["evo_title"], esc(gen.guild), X["evo_sub"]))
 
+    # ---- raid trajectory (dynamic over all weeks)
     h.append("<h2>%s</h2>" % X["evo_raid"])
     rows = []
     for w in weeks:
@@ -500,20 +525,72 @@ def page_evolution(gen):
     h.append(table([X["th_week"], X["th_pulls"], X["th_kills"],
                     X["th_wipes"], X["th_deaths"], X["th_prepot"]], rows))
 
+    # ---- players: percentile + ilvl charts (one series/week) + table
     h.append("<h2>%s</h2>" % X["th_player"].capitalize() + "s")
-    heads = [X["th_player"], X["th_role"]]
-    for w in weeks:
-        heads += ["%s %s" % (X["th_pctl"], w["label"][-5:]),
-                  "%s %s" % (X["th_ilvl"], w["label"][-5:])]
-    heads.append(X["th_deaths"])
-    rows = []
 
     def last_pctl(e):
         v = e["weeks"][-1]["median_percentile"]
         return -1 if v is None else v
-    for nm, e in sorted(players.items(), key=lambda x: -last_pctl(x[1])):
-        if not e["weeks"][-1]["present"]:
-            continue
+    pres = [(nm, e) for nm, e in sorted(players.items(),
+                                        key=lambda x: -last_pctl(x[1]))
+            if e["weeks"][-1]["present"]]
+    pnames = [nm for nm, _ in pres]
+    if pnames:
+        h.append("<h3>%s</h3>" % esc(X["evo_pctl_h"]))
+        h.append('<div class="chartbox" style="height:%dpx">'
+                 '<canvas id="evopctl"></canvas></div>'
+                 % max(260, 26 * len(pnames)))
+        js.append("tlChart('evopctl',%s);\n" % json.dumps({
+            "type": "bar",
+            "data": {"labels": pnames, "datasets": [
+                {"label": wshort(w),
+                 "data": [e["weeks"][i]["median_percentile"] for _, e in pres],
+                 "backgroundColor": wcol(i)} for i, w in enumerate(weeks)]},
+            "options": {"indexAxis": "y", "animation": False,
+                        "responsive": True, "maintainAspectRatio": False,
+                        "scales": {"x": {"min": 0, "max": 100,
+                                         "ticks": {"color": "#8a93a2"},
+                                         "grid": {"color": "#2a2f3a"}},
+                                   "y": {"ticks": {"font": {"size": 9},
+                                                   "autoSkip": False,
+                                                   "color": "#8a93a2"},
+                                         "grid": {"display": False}}},
+                        "plugins": {"legend": {"labels": {"boxWidth": 10,
+                                              "color": "#8a93a2"}}}}},
+            ensure_ascii=False))
+        ipres = sorted(pres, key=lambda x: -(x[1]["weeks"][-1]["ilvl"] or 0))
+        inames = [nm for nm, _ in ipres]
+        h.append("<h3>%s</h3>" % esc(X["evo_ilvl_h"]))
+        h.append('<div class="chartbox" style="height:240px">'
+                 '<canvas id="evoilvl"></canvas></div>')
+        js.append("tlChart('evoilvl',%s);\n" % json.dumps({
+            "type": "line",
+            "data": {"labels": inames, "datasets": [
+                {"label": wshort(w),
+                 "data": [e["weeks"][i]["ilvl"] for _, e in ipres],
+                 "borderColor": wcol(i), "pointRadius": 2, "tension": 0,
+                 "spanGaps": True} for i, w in enumerate(weeks)]},
+            "options": {"animation": False, "responsive": True,
+                        "maintainAspectRatio": False,
+                        "scales": {"x": {"ticks": {"font": {"size": 9},
+                                                   "maxRotation": 80,
+                                                   "minRotation": 45,
+                                                   "color": "#8a93a2"},
+                                         "grid": {"color": "#2a2f3a"}},
+                                   "y": {"min": 540,
+                                         "ticks": {"color": "#8a93a2"},
+                                         "grid": {"color": "#2a2f3a"}}},
+                        "plugins": {"legend": {"labels":
+                                               {"color": "#8a93a2"}}}}},
+            ensure_ascii=False))
+
+    heads = [X["th_player"], X["th_role"]]
+    for w in weeks:
+        heads += ["%s %s" % (X["th_pctl"], wshort(w)),
+                  "%s %s" % (X["th_ilvl"], wshort(w))]
+    heads.append(X["th_deaths"])
+    rows = []
+    for nm, e in pres:
         lw = e["weeks"][-1]
         row = [esc(nm), esc(lw["role"] or "?")]
         for wv in e["weeks"]:
@@ -524,6 +601,67 @@ def page_evolution(gen):
         rows.append(tuple(row))
     h.append(table(heads, rows))
 
+    # ---- strict comparable: most-covered boss+difficulty across >=2 weeks
+    # (raw DPS is only comparable same boss + same difficulty). Generic.
+    cov = {}
+    for wi, w in enumerate(weeks):
+        for k in w["raid"]["kills"]:
+            cov.setdefault((k["boss"], k["difficulty"]), set()).add(wi)
+    cand = sorted(((len(wis), bd) for bd, wis in cov.items() if len(wis) >= 2),
+                  reverse=True)
+    if cand:
+        boss, diff = cand[0][1]
+        cwis = sorted(cov[(boss, diff)])
+        dn = {3: "N", 4: "HM"}.get(diff, str(diff))
+        pdps = {}
+        for nm, e in players.items():
+            for wi in cwis:
+                for p in (e["weeks"][wi].get("parses") or []):
+                    if (p["boss"] == boss and p["difficulty"] == diff
+                            and p["metric"] == "dps"):
+                        pdps.setdefault(nm, {})[wi] = p["amount"]
+                        break
+        first, lastc = cwis[0], cwis[-1]
+        h.append("<h2>%s — %s %s</h2>" % (X["evo_cmp_h"], esc(boss), dn))
+        h.append("<p class='mut'>%s</p>" % (X["evo_cmp_intro"] % (
+            esc(boss), dn, ", ".join(wshort(weeks[wi]) for wi in cwis))))
+        cn, cd, rows = [], [], []
+        for nm in sorted(pdps, key=lambda x: -(pdps[x].get(lastc) or 0)):
+            d = pdps[nm]
+            if lastc not in d:
+                continue
+            a = d.get(first)
+            dl = ("%+d %%" % round((d[lastc] - a) / a * 100)) if a else "—"
+            rows.append((esc(nm), round(a / 1000) if a else "—",
+                         round(d[lastc] / 1000), dl))
+            if a:
+                cn.append(nm)
+                cd.append(round((d[lastc] - a) / a * 100))
+        if cn:
+            h.append('<div class="chartbox" style="height:220px">'
+                     '<canvas id="evocmp"></canvas></div>')
+            js.append("tlChart('evocmp',%s);\n" % json.dumps({
+                "type": "bar",
+                "data": {"labels": cn, "datasets": [{
+                    "data": cd,
+                    "backgroundColor": ["#3fb950" if x >= 0 else "#e0744f"
+                                        for x in cd]}]},
+                "options": {"animation": False, "responsive": True,
+                            "maintainAspectRatio": False,
+                            "plugins": {"legend": {"display": False}},
+                            "scales": {"x": {"ticks": {"font": {"size": 9},
+                                                       "maxRotation": 80,
+                                                       "minRotation": 45,
+                                                       "color": "#8a93a2"},
+                                             "grid": {"color": "#2a2f3a"}},
+                                       "y": {"ticks": {"color": "#8a93a2"},
+                                             "grid": {"color": "#2a2f3a"}}}}},
+                ensure_ascii=False))
+        h.append(table([X["th_player"], X["th_dps_k"] % wshort(weeks[first]),
+                        X["th_dps_k"] % wshort(weeks[lastc]), X["th_delta"]],
+                       rows))
+
+    # ---- gear (dynamic: latest week-over-week delta)
     ups = sorted(((v.get("delta") or 0, nm, v) for nm, v in gear.items()
                   if nm != "__departed__"), reverse=True)
     items = []
@@ -537,6 +675,12 @@ def page_evolution(gen):
     if items:
         h.append("<h2>%s</h2><div class='panel'><ul>%s</ul></div>"
                  % (X["new_items"], "".join(items)))
+    h.append("<h2>%s</h2>" % X["evo_roster_h"])
+    h.append(table([X["th_week"], X["th_roster"]],
+                   [(esc(w["label"]),
+                     sum(1 for e in players.values()
+                         if e["weeks"][i]["present"]))
+                    for i, w in enumerate(weeks)]))
     dep = gear.get("__departed__") or []
     arr = [nm for nm, v in gear.items()
            if nm != "__departed__" and v.get("absent_prev")]
@@ -544,6 +688,9 @@ def page_evolution(gen):
         X["arrived"], esc(", ".join(arr)) or "—",
         X["departed"], esc(", ".join(dep)) or "—"))
     h.append("</main>")
-    h.append(gen.foot())
+    # tlChart() lives in pages.CHART_JS; prepend it when we emitted any chart.
+    # Lazy import: pages imports pages_ext, so a top-level import would cycle.
+    from pages import CHART_JS
+    h.append(gen.foot((CHART_JS + "".join(js)) if js else ""))
     gen.write(os.path.join(gen.workdir, "pages", "evolution", "index.html"),
               "".join(h))

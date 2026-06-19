@@ -158,6 +158,11 @@ python3 "$SKILL/scripts/pacing.py"              # combat vs idle, repull discipl
 python3 "$SKILL/scripts/percentiles.py"         # per-player kill percentiles (~2 calls/report)
 # week-over-week (only when earlier debrief workdirs exist for this guild):
 python3 "$SKILL/scripts/evolution.py" <wd_week1> ... <this_workdir>
+# the evolution page is a ROLLUP — it does NOT update itself when a new night
+# ships, so REBUILD + REPUBLISH it every time. Dynamic over N weeks (just pass
+# every week's workdir): renders percentile + ilvl charts, a strict
+# same-boss-same-difficulty raw-DPS comparable, and roster in/out.
+python3 "$SKILL/scripts/pages.py" --workdir <this_workdir> --only evolution
 ```
 
 GATE: every module printed output and `digests/analysis/` contains pacing,
