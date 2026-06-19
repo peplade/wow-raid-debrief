@@ -99,6 +99,15 @@ trail proving the gate ran; it stays in the workdir, unpublished.
   anomalous subset instead of the full set produced a real published error).
 - A metric at a suspiciously round 0% or 100%: suspect id mismatch (class F)
   or extraction silent-zero before suspecting the player.
+- A DTPS / damage-intake magnitude that is PHYSICALLY IMPOSSIBLE (raid taking
+  many times a player's HP pool per second, a short wipe out-totalling the
+  kill): the WCL DamageTaken graph (`deep_graph kind='dtps'`) SUMS the nominal
+  `unmitigated` value of scripted mechanics that log ~1e9/hit (Sha of Pride
+  149031 Banishment = 1,000,000,000/hit, ~1.4M effective) → ~100x inflation on
+  the pulls that touch the mechanic, leaving other pulls (e.g. the kill) clean
+  so only some charts look wrong. Build ANY DTPS curve/stat from
+  `deep_dmg_taken.amount` (effective, post-absorb), never the graph. Test:
+  `sum(graph.Total.data)` vs `sum(deep_dmg_taken.amount)` ≫1 = poison.
 - A behavior shared by EVERYONE in the raid (e.g. all melee stop at the same
   second): collective pattern = mechanic or call, not 10 individual fails.
 - A "fail" by the most experienced player on a mechanic they know: raise the

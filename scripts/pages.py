@@ -318,18 +318,52 @@ class Gen:
 
     # --------------------------------------------------------- chart pieces
 
-    def timeline_pull_chart(self, cid, pull, dtps_series, h=240):
+    def timeline_pull_chart(self, cid, pull, dtps_series, report, fid, h=240):
         dur = pull["duration_s"]
-        tot = next((s for s in dtps_series if s.get("name") == "Total"), None)
-        if not tot:
+        BIN = 2  # seconds per bucket
+        nb = int(dur // BIN) + 1
+        # Raid DTPS + Mark-of-Arrogance DTPS, both from per-event EFFECTIVE
+        # damage (deep_dmg_taken). The WCL DamageTaken graph is unusable here:
+        # nominal billion-value abilities (e.g. 149031 Banishment, unmitigated
+        # 1e9/hit) inflate the wipe curves ~100x. Effective `amount` is clean
+        # and lets the Mark curve be a true subset of the raid curve.
+        raid, mark, have = {}, {}, False
+        for r in self.be.con.execute(
+                "SELECT ts_rel, ability_id, amount FROM deep_dmg_taken "
+                "WHERE report=? AND fight_id=?", (report, fid)):
+            have = True
+            t = (r["ts_rel"] or 0) / 1000.0
+            if t < 0 or t > dur + 5:
+                continue
+            k = int(t // BIN)
+            a = r["amount"] or 0
+            raid[k] = raid.get(k, 0.0) + a
+            if r["ability_id"] == 144351:  # Mark of Arrogance (Sha of Pride)
+                mark[k] = mark.get(k, 0.0) + a
+        if have:
+            pts = [{"x": i * BIN, "y": round(raid.get(i, 0.0) / BIN)}
+                   for i in range(nb)]
+            mpts = ([{"x": i * BIN, "y": round(mark.get(i, 0.0) / BIN)}
+                     for i in range(nb)] if mark else [])
+        else:
+            # Fallback (no per-event data): WCL Total graph, divided by the
+            # seconds each bucket actually spans (not a hard-coded 2 s).
+            tot = next((s for s in dtps_series if s.get("name") == "Total"), None)
+            if not tot:
+                return "", ""
+            data = tot.get("data") or []
+            n = max(1, len(data))
+            step = (tot.get("pointInterval") or dur * 1000.0 / n) / 1000.0
+            amt, cov = {}, {}
+            for i, v in enumerate(data):
+                k = int((i * step) // BIN)
+                amt[k] = amt.get(k, 0.0) + (v or 0)
+                cov[k] = cov.get(k, 0.0) + step
+            pts = [{"x": k * BIN, "y": round(amt[k] / cov[k])}
+                   for k in sorted(amt) if cov[k]]
+            mpts = []
+        if not pts:
             return "", ""
-        data = tot.get("data") or []
-        n = max(1, len(data))
-        step = dur / n
-        b = {}
-        for i, v in enumerate(data):
-            b[int(i * step // 2) * 2] = b.get(int(i * step // 2) * 2, 0) + (v or 0)
-        pts = [{"x": x, "y": round(b[x] / 2)} for x in sorted(b)]
         ann = {}
         for i, ph in enumerate(pull.get("phases") or []):
             if ph["t"] < 1:
@@ -351,13 +385,19 @@ class Gen:
         for i, c in enumerate(pull.get("cds") or []):
             ann[f"c{i}"] = {"type": "point", "xValue": c["t"], "yValue": 0,
                             "backgroundColor": "#6db3f2", "radius": 4}
+        datasets = [{"data": pts, "parsing": False,
+                     "borderColor": "#e0744f",
+                     "backgroundColor": "rgba(224,116,79,.15)",
+                     "fill": True, "pointRadius": 0,
+                     "borderWidth": 1.6, "tension": .25}]
+        if mpts:
+            datasets.append({"data": mpts, "parsing": False,
+                             "borderColor": "#d62728", "fill": False,
+                             "pointRadius": 0, "borderWidth": 1.4,
+                             "tension": .25})
         cfg = {
             "type": "line",
-            "data": {"datasets": [{"data": pts, "parsing": False,
-                                   "borderColor": "#e0744f",
-                                   "backgroundColor": "rgba(224,116,79,.15)",
-                                   "fill": True, "pointRadius": 0,
-                                   "borderWidth": 1.6, "tension": .25}]},
+            "data": {"datasets": datasets},
             "options": {
                 "animation": False, "responsive": True, "maintainAspectRatio": False,
                 "scales": {
@@ -375,7 +415,9 @@ class Gen:
                         "v=>v>=1e6?(v/1e6)+' M':v>=1e3?(v/1e3)+' k':v")
         leg = ('<div class="legend">'
                '<b style="color:#e0744f">▬</b> dégâts subis par le raid / s'
-               ' · <b style="color:#e8b923">│</b> phase'
+               + ('  · <b style="color:#d62728">▬</b> dont Mark of Arrogance / s'
+                  if mpts else '')
+               + ' · <b style="color:#e8b923">│</b> phase'
                ' · <b style="color:#e0744f">┊</b> mort <span class="mut">(qui + coup → table)</span>'
                ' · <b style="color:#6db3f2">●</b> CD de raid</div>')
         return (f'<div class="chartbox" style="height:{h}px">'
@@ -594,7 +636,7 @@ class Gen:
 </summary><div class="bbody">""")
             ch, js = self.timeline_pull_chart(
                 f"tl{enc_id}{suffix}{p['pull']}", p,
-                self.dtps_for(pcode, p["fight_id"]))
+                self.dtps_for(pcode, p["fight_id"]), pcode, p["fight_id"])
             h.append(ch)
             js_all.append(js)
             note = self.frag("boss", ckey, f"pull_{p['pull']}.html")

@@ -3,6 +3,21 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [1.2.13] — 2026-06-19
+
+- **DTPS curves/stats: never derive from the WCL DamageTaken graph — use
+  `deep_dmg_taken.amount` (effective).** The graph (`deep_graph kind='dtps'`)
+  SUMS the nominal `unmitigated` value of scripted mechanic hits that log
+  ~1e9/hit (e.g. Sha of Pride **149031 Banishment**, 1,000,000,000/hit, ~1.4M
+  effective). On wipes this inflated the per-pull "raid damage taken / s" curve
+  ~100x (up to **480M/s vs ~500k/s** real); the kill happened to be clean, so
+  only the WIPE charts looked wrong. `pages.py timeline_pull_chart` now builds
+  the raid curve AND a new **Mark of Arrogance (144351)** subset curve from
+  per-event effective `amount`, bucketed to 2s; falls back to the graph
+  (with corrected per-interval binning) only when no per-event data exists.
+  Poison test: `sum(graph.Total.data)` vs `sum(deep_dmg_taken.amount)` —
+  ratio ≫1 = poison (Sha wipe: 136x). `interpretation-traps` self-audit updated.
+
 ## [1.2.12] — 2026-06-19
 
 - **redaction-guide rule 13: no section YOU invent.** A section = log-backed data,
