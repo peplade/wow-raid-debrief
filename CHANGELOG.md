@@ -13,6 +13,13 @@ newest first. Every lesson backported from real raid-night use gets an entry.
   old-vs-new, diff of every generated page + digest) now passes byte-identical;
   the technical unit checks had missed it (`92 == 92.0` in Python). Rebuild
   `history.db` (`history_sync.py --backfill`) to pick up the column type.
+- **Two gates added** (the lesson, backported): `scripts/test_history.py`
+  (stdlib unittest — lzma round-trip, dimension Players-only / no actor_id=0
+  leak, idempotence, rollup reconstructibility, NUMERIC int guard) for the
+  plumbing; `scripts/recette_nonreg.sh <old-ref> <wd_prev> <wd_last>` for
+  FUNCTIONAL non-regression — regenerates the full deliverable old-vs-new and
+  byte-diffs every page + digest (what dict-equality misses). Verified DIFF
+  VIDE current vs pre-refactor.
 
 ## [2.0.0] — 2026-06-19
 
