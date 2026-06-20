@@ -3,6 +3,22 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [2.1.0] — 2026-06-20
+
+- **New: per-boss cooldown-timeline method** (`references/cd_timeline_method.md`).
+  Reproducible recipe to chart where a top-parse of a spec drops its cooldowns
+  per boss (labeled lanes) alongside log-sourced vertical event lines: phases
+  (`phaseTransitions`), boss casts (`Casts`/`hostilityType:Enemies`), NPC kills
+  (`Deaths`), add-spawn waves (first-cast per enemy actor, clustered), boss-HP
+  thresholds (`graph(DamageDone,targetID)` cumulative), and spans (cast + fixed
+  duration). Generalizes to any spec (DPS/heal/tank). Documents the WCL gotchas
+  hit in practice: Uplift rendered as "Vivify" (116670) with an alt id (130316) —
+  count both; `table` data nested under `.data.entries`; `DamageTaken`+`targetID`
+  returns 0 silently; `graph` series are per-bucket value arrays, not `[t,v]`;
+  player id = actor type Player vs boss/add = NPC (else homonym collisions blank
+  the player's casts); cast id ≠ buff id; never invent an unresolved marker —
+  drop it or ask the domain expert. Validated live on a Mistweaver deep-dive.
+
 ## [2.0.1] — 2026-06-20
 
 - **Fix: percentiles render as `92`, not `92.0`.** `h_percentile` stored
