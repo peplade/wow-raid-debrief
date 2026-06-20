@@ -174,11 +174,14 @@ CREATE TABLE IF NOT EXISTS h_percentile (
     spec            TEXT,
     role            TEXT,
     metric          TEXT,                  -- dps | hps
-    amount          REAL,
-    rank_percent    REAL,
-    best_percent    REAL,
-    bracket_percent REAL,
-    ilvl            REAL,
+    -- NUMERIC (not REAL): preserve the int-vs-float type WCL returned, so
+    -- evolution.py reproduces percentiles.json byte-for-byte (REAL would coerce
+    -- a whole percentile 92 -> 92.0, rendering "92.0" instead of "92").
+    amount          NUMERIC,
+    rank_percent    NUMERIC,
+    best_percent    NUMERIC,
+    bracket_percent NUMERIC,
+    ilvl            NUMERIC,
     PRIMARY KEY (raid_label, report, fight_id, player_id, metric)
 );
 

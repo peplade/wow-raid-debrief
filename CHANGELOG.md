@@ -3,6 +3,17 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [2.0.1] — 2026-06-20
+
+- **Fix: percentiles render as `92`, not `92.0`.** `h_percentile` stored
+  WCL percentiles/ilvl in REAL columns, coercing whole numbers (92, 550) to
+  floats — so `evolution.py` emitted `92.0` where the legacy raid.db path
+  emitted `92`. Switched those columns to NUMERIC (preserves the int-vs-float
+  type WCL returned). Functional non-regression recette (full pipeline
+  old-vs-new, diff of every generated page + digest) now passes byte-identical;
+  the technical unit checks had missed it (`92 == 92.0` in Python). Rebuild
+  `history.db` (`history_sync.py --backfill`) to pick up the column type.
+
 ## [2.0.0] — 2026-06-19
 
 - **3-tier data architecture: lzma cache + unified `history.db` for cross-lockout
