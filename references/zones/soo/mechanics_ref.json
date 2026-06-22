@@ -528,18 +528,12 @@
    "143987": {
     "name": "Falling Ash",
     "class": "avoidable",
-    "how": "« pluie » de cendres : zone qui tombe (burst ~55s), à quitter avant l'impact (spec : P4 movement)",
-    "target": "all",
-    "source_ref": "soo_encounter_spec.md L604 (§5 : Iron Prison / Falling Ash, « Emprisonnement / pluie », P4/P7) / p6_profiles.go L124-125, L133-134, L138",
-    "note": "DIVERGENCE spec/code : la spec le met en P4 (évitable), mais le profil P6 le modélise raid-wide burst (per-event 222-329k) car dans les kills WCL le raid l'encaisse largement — évitable sur le papier, souvent mangé en pratique. IDs : spec 143973 (cast), logs/sim 143987 (dégât)"
+    "how": "zone rouge au sol (~15 s d'avertissement) à QUITTER = le coup qui tue (placement) ; + composante Feu raid-wide obligatoire réductible au soin. Mi-évitable : la zone tue, le tick raid se soigne"
    },
    "144214": {
     "name": "Froststorm Bolt",
-    "class": "unknown",
-    "how": "non documenté localement — composant du fold stream P6 (« Froststorm Strike/Bolt ») ; à distinguer de Froststorm Strike 144215 (tank)",
-    "target": "random",
-    "source_ref": "p6_profiles.go L126-127 (fold)",
-    "dbm_status": "absent de DBM-MoP (grep clone complet — DBM ne couvre du kit Froststorm que le Strike 144215, en stack tank + taunt)"
+    "class": "tank",
+    "how": "nuke gelé UNINTERRUPTIBLE de Wavebinder Kardris sur SON TANK (dégât tank régulier) — ni un kick, ni un focus-heal raté : soin tank"
    },
    "144017": {
     "name": "Toxic Storm",
@@ -552,11 +546,8 @@
    },
    "143993": {
     "name": "Foul Geyser",
-    "class": "avoidable",
-    "how": "geysers/flaques toxiques : éviter les zones (spec : groupe flaques toxiques, all move, P6/P4)",
-    "target": "all",
-    "source_ref": "soo_encounter_spec.md L603 (§5 : Foul Geyser 143990) / p6_profiles.go L139 (l'ID porte le stream du sim)",
-    "note": "IDs : spec 143990 (cast), logs/sim 143993 (dégât)"
+    "class": "unavoidable",
+    "how": "aura de proximité des adds Foul Geyser : dégât Nature SUBI dans le paquet — réduire en tuant les adds / en s'écartant, PAS une zone télégraphiée à esquiver"
    },
    "144090": {
     "name": "Foul Stream",
@@ -564,6 +555,16 @@
     "how": "jet projeté sur un axe (ligne télégraphiée) : sortir de la ligne (spec : « sol/murs à esquiver », P4)",
     "target": "all",
     "source_ref": "soo_encounter_spec.md L602 (§5 : Foul Stream 144090 / Ashen Wall / Iron Tomb, P4 movement)"
+   },
+   "144331": {
+    "name": "Iron Prison",
+    "class": "reducible",
+    "how": "HÉROÏQUE : debuff ciblé aléatoire = 100 % des PV max à l'expiration → CD défensif perso / absorption OBLIGATOIRE sinon one-shot. Levier DÉFENSIFS, pas placement"
+   },
+   "144334": {
+    "name": "Iron Tomb",
+    "class": "avoidable",
+    "how": "HÉROÏQUE : objet stationnaire posé sur un joueur, rayon ~3 y à éviter (placement)"
    }
   },
   "notes_hm": "HM : sol plus dense (Ashen Wall 144070, Iron Tomb 144328) + Toxic Storm (spec L595) ; HP 453M → 655M (spec L593). 2 boss tankés/tués ensemble, réellement cleavables (spec L588-589) ; pas de hard-enrage classique (CD DBM 540s). Iron Prison 144330 = emprisonnement (P4/P7 — spec L604).",

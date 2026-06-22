@@ -144,6 +144,23 @@ exists because the Sha rift pair (Unstable Corruption / Collapsing Rift) and
 Bursting Pride shipped MIS-classified from the ref and the verifier missed them
 (double-failure, 2026-06). See interpretation-traps class I + checklist item 6.
 
+**A DEEP-DIVE multiplies the stakes — verify EVERY cited mechanic FIRST.** When a
+whole boss-page thesis rests on a classification ("the wall was avoidable-ground
+attrition"), an unverified ref label is a house of cards: if it falls, the
+conclusion falls. Recurrence 2026-06 (Kor'kron Dark Shaman): a 3-table deep-dive
+was built straight on `mech_class` WITHOUT per-boss Wowhead cross-check — the
+`how` strings carried DBM/sim notes, which made the ref *look* vetted ("annotated"
+≠ "verified for THIS boss"). The user (domain authority) flagged it. Corrections
+once cross-checked: Foul Geyser = SUBI proximity aura (was "avoidable"); Froststorm
+Bolt = TANK nuke uninterruptible (was framed "focus-heal not held / 29 hits on one
+player" — it's the tank); Iron Prison (HM) = REDUCIBLE, 100% HP → mandatory
+personal CD (a DEFENSIVE lever, not placement); Iron Tomb (HM) = avoidable, was
+missing; Falling Ash = mi-avoidable (oneshot zone dodgeable + mandatory raid-wide
+chip). Rule: list every mechanic id the deep-dive will cite, cross-check each one
+(tooltip + guide) BEFORE writing the narrative — and prefer splitting attrition by
+LEVER (placement / defensive-CD / heal), which a single avoidable/unavoidable
+binary hides.
+
 ## Officers annex
 
 A separate unlisted page (noindex, token URL) for franker per-player notes

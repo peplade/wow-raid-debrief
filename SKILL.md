@@ -56,6 +56,17 @@ If missing: stop and ask the user to follow README "Getting WCL credentials".
 
 ## Stage 1 — framing (ask, then respect the answers)
 
+**FIRST — new lockout or continuation?** A weekly raid ID spread over several
+nights is ONE consolidated debrief, never one CR per night. Before scaffolding,
+check whether a debrief for THIS lockout already exists (even a prior night that
+was deployed standalone by mistake): if so, this night is the SAME CR — fold it
+in with `ingest.py add-report` and rebuild the consolidated workdir on the FIRST
+night's slug, never a new standalone slug. "ID 2 / soir 2 of the week" means a
+night OF the week's CR, not a separate deliverable. (Real miss 2026-06: a week-3
+night was shipped as a separate `id-2026-06-21` CR instead of being consolidated
+with the same lockout's earlier night — see `references/methodology.md` and the
+consolidation note in Stage 2.) When in doubt, ASK whether to consolidate.
+
 If the user has not already specified them, ask (multiple-choice, with
 defaults marked) — group in ONE message:
 

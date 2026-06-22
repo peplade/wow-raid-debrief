@@ -91,6 +91,13 @@ Counter-example (slop — never write this):
   internal-methodology vocabulary leaking into player-facing content:
   "our analyses", "validated across our reports", "gotcha", "pipeline",
   "we publish". Internal rules justify the content; they never appear in it.
+- Scan ALSO for **self-referential editorial plumbing** — phrases that describe
+  the CR's own structure or the public/officers split, which must never surface
+  on a public page: "blame stays in the officers annex" / "le blâme … reste en
+  annexe officiers", "detail elsewhere", "spread out, nobody isolated" used as a
+  disclaimer. A public page shows FACTS, not the editorial machinery that
+  produced them. (Real leak 2026-06: a public deep-dive table subtitle read "le
+  blâme nominatif détaillé reste en annexe officiers" — forbidden.)
 
 ## Per-page content expectations
 

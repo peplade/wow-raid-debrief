@@ -3,6 +3,35 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [2.2.0] — 2026-06-22
+
+Backported from the EdR week-3 consolidated CR (Siege of Orgrimmar 25).
+
+- **Consolidation framing made explicit** (`SKILL.md` Stage 1): a weekly raid ID
+  spread over several nights is ONE consolidated debrief — before scaffolding,
+  check whether a debrief for this lockout already exists (even a prior night
+  shipped standalone) and fold the new night in with `add-report` on the first
+  night's slug, never a new standalone slug. "ID 2 / soir 2 of the week" = a
+  night OF the week's CR. (Real miss: a week-3 night was shipped as a separate
+  `id-2026-06-21` CR instead of consolidated.)
+- **Mechanic-classification rule extended to deep-dives** (`references/methodology.md`):
+  a deep-dive whose thesis rests on a classification multiplies the stakes —
+  cross-check EVERY cited mechanic (tooltip + guide) BEFORE writing, and prefer
+  splitting attrition by LEVER (placement / defensive-CD / heal) over a binary
+  avoidable/unavoidable. Recurrence: a Kor'kron Dark Shaman deep-dive shipped on
+  raw `mech_class` (DBM/sim notes made the ref *look* vetted).
+- **Self-referential editorial plumbing added to the leak scan** (`references/redaction-guide.md`):
+  public pages never describe their own structure or the public/officers split
+  ("blame stays in the officers annex", "spread out, nobody isolated" as a
+  disclaimer). Real leak fixed.
+- **Kor'kron Dark Shaman mechanics corrected** (`references/zones/soo/mechanics_ref.json`
+  + `traps.md`): Foul Geyser 143993 = unavoidable proximity aura (was avoidable);
+  Froststorm Bolt 144214 = uninterruptible TANK nuke (was unknown / mis-framed as
+  a focus-heal fail); Iron Prison 144331 (HM) = reducible, 100% HP → mandatory
+  personal CD (added); Iron Tomb 144334 (HM) = avoidable (added); Falling Ash
+  143987 = mi-avoidable (oneshot zone + raid-wide chip). Verified Icy Veins +
+  Wowhead + domain authority.
+
 ## [2.1.0] — 2026-06-20
 
 - **New: per-boss cooldown-timeline method** (`references/cd_timeline_method.md`).
