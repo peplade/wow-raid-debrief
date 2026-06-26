@@ -184,6 +184,16 @@ PLUS dossiers.json, execution_nominative.json, pacing.json (and
 evolution.json + gear_evolution.json on multi-week runs).
 A SKIPPED module = its precondition failed; go back, do not shrug it off.
 
+GATE (automated re-derivation — `verify.py`):
+`python3 "$SKILL/scripts/verify.py" --workdir <this_workdir>` RE-derives the digest
+headline numbers straight from `raid.db` — per-boss pulls + kill durations, raw and
+qualified (invariant 6) deaths, avoidable damage from `deep_dmg_taken.amount` (NOT the
+poisoned WCL graph, invariant 1.2.13), top-parse refs — and fails **NO-GO** on any
+mismatch: the digests must trace to the events, never the other way round. Seed it once
+per zone with **canary claims** (`--canaries canaries.json`, deliberately wrong values):
+every canary MUST be flagged or the gate is **VOID** (proves the checker has teeth, not a
+lazy pass). Exit 0 = GO required to proceed.
+
 The nominative layer is NOT optional. A debrief that stops at aggregates
 (deaths per mechanic, raid-wide CD counts) without the per-pull dossiers
 (chronology + which CDs were AVAILABLE and unused at each critical moment)
@@ -225,6 +235,16 @@ mechanism, not just the correlation:
 Write every candidate into `<workdir>/verdicts.md` as it emerges (next stage
 formalizes them). Use the zone traps doc as a pre-filter: if a candidate
 matches a known trap, kill or reframe it immediately.
+
+Automated mechanic-classification cross-check (`classify_audit.py`):
+`python3 "$SKILL/scripts/classify_audit.py" <workdir>` measures, per AREA mechanic
+(`target:all` only — targeted debuffs land on a few by design), the median distinct
+PLAYER targets per ~2s wave from `deep_dmg_taken`, and flags where it CONTRADICTS the
+static `mechanics_ref` class (labelled avoidable but the whole raid eats it → raid-wide
+CD; labelled unavoidable but only 2-3 eat it → dodgeable). It is the machine half of
+trap class I — advisory (writes `digests/analysis/classify_audit.json`, never edits the
+ref); confirm each flag against Wowhead before re-labelling. Low-sample mechanics are
+listed as inconclusive, never silently dropped.
 
 ## Stage 6 — verdicts gate (MANDATORY, one entry per finding)
 
@@ -303,6 +323,14 @@ Before delivery, on a multi-night ID especially:
   transition wipes can be bucketed as trash — see wcl-api-gotchas).
 Omissions and night-1-frozen prose are exactly what slips past stages 5-6 and
 gets caught on user review instead.
+
+ADVERSARIAL PASS (before delivery) — the bundled **`wow-cr-verifier`** subagent
+(`agents/wow-cr-verifier.md`; copy it once to `~/.claude/agents/` so Claude Code loads
+it). It re-reads the rendered CR + the workdir artifacts and re-checks every number
+against its source and every reproach against the trap classes, writing
+BLOCKER/FIX/OPEN-QUESTION/MISS/OK + a GO/NO-GO verdict into a fresh
+`<workdir>/cr-verification.md`. Advisory, but: **no delivery with an open BLOCKER** —
+apply the BLOCKER/FIX findings, re-render, re-run.
 
 ## Stage 9 — delivery
 

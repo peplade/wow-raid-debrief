@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from wcl import (Backend, DIFF_NAME, fetch_events, fetch_graph, fetch_table,
-                 fmt_dur, gql, ingest_actors, json_field, load_config, load_env,
+                 fmt_dur, gql, ingest_actors, json_field, killing_blow, load_config, load_env,
                  quota, rankings_reports, report_codes, report_meta,
                  save_config, unwrap, workdir_from_args)
 
@@ -105,6 +105,13 @@ def _parse_report_args(report_args):
             if c.strip()]
 
 
+def fight_bounds(f):
+    """(id, startTime, endTime) of a WCL fight, or None if any is missing
+    (deleted/malformed entry) — callers skip-with-log rather than KeyError."""
+    fid, fs, fe = f.get("id"), f.get("startTime"), f.get("endTime")
+    return None if (fid is None or fs is None or fe is None) else (fid, fs, fe)
+
+
 def _validated_codes(be, codes, zone_id=None):
     """Fetch metas, enforce single zone, return (chronological codes, metas)."""
     metas = {c: report_meta(be, c) for c in dict.fromkeys(codes)}
@@ -114,6 +121,10 @@ def _validated_codes(be, codes, zone_id=None):
         sys.exit("reports span DIFFERENT zones — one workdir = one raid ID:\n  "
                  + "\n  ".join(f"{c}: {zones[c].get('name')} (id {zones[c].get('id')})"
                                for c in metas))
+    missing = [c for c in metas if metas[c].get("startTime") is None]
+    if missing:
+        sys.exit("report(s) with no startTime header (deleted/private/anonymized?): "
+                 + ", ".join(missing) + " — remove from the list or check access")
     ordered = sorted(metas, key=lambda c: metas[c]["startTime"])
     return ordered, metas
 
@@ -213,8 +224,12 @@ def cmd_session(be, cfg, args):
         if not fights:
             sys.exit(f"no boss pulls in report {code}")
         seen_per_boss = {}
-        for f in sorted(fights, key=lambda x: x["startTime"]):
-            fid, fs, fe = f["id"], f["startTime"], f["endTime"]
+        for f in sorted(fights, key=lambda x: x.get("startTime") or 0):
+            b = fight_bounds(f)
+            if b is None:
+                print(f"  [skip] malformed fight {f.get('id')} {f.get('name','?')}: missing id/start/end", flush=True)
+                continue
+            fid, fs, fe = b
             n = seen_per_boss[f["encounterID"]] = seen_per_boss.get(f["encounterID"], 0) + 1
             be.upsert("pull", {
                 "report": code, "fight_id": fid, "encounter_id": f["encounterID"],
@@ -276,7 +291,7 @@ def ingest_pull_session(be, code, fid, fs, fe, avoid_ids):
         dt_ms = d.get("timestamp") or 0
         if dt_ms > (fe - fs):           # report-absolute -> pull-relative
             dt_ms -= fs
-        kb = d.get("killingBlow") or {}
+        kb = killing_blow(d)
         be.upsert("death", {
             "report": code, "fight_id": fid, "seq": i, "actor_id": d.get("id"),
             "player_name": d.get("name"), "death_time": dt_ms,
@@ -434,7 +449,7 @@ def cmd_deep(be, cfg, args):
             print("WARNING: no healers in composition — run `session` first "
                   "(mana series will be skipped)")
         print(f"{code}: {len(fights)} boss pulls; healers (mana tracked): {healer_ids}")
-        for f in sorted(fights, key=lambda x: x["startTime"]):
+        for f in sorted(fights, key=lambda x: x.get("startTime") or 0):
             st = ingest_pull_deep(be, code, f, healer_ids)
             n = {k: be.con.execute(
                 f"SELECT COUNT(*) c FROM {t} WHERE report=? AND fight_id=?",
@@ -448,11 +463,16 @@ def cmd_deep(be, cfg, args):
 
 
 def ingest_pull_deep(be, code, f, healer_ids):
-    fid, fs, fe = f["id"], f["startTime"], f["endTime"]
+    b = fight_bounds(f)
+    if b is None:
+        return "skip"
+    fid, fs, fe = b
     if be.done(code, fid, "pull_deep"):
         return "skip"
 
     for i, p in enumerate(f.get("phaseTransitions") or []):
+        if p.get("id") is None or p.get("startTime") is None:
+            continue
         be.upsert("deep_phase", {
             "report": code, "fight_id": fid, "idx": i, "phase_id": p["id"],
             "phase_name": None, "ts_rel": p["startTime"] - fs,
@@ -555,8 +575,12 @@ def cmd_extras(be, cfg, args):
 
 def _extras_one(be, code):
     fights = fights_query(be, code)
-    for f in sorted(fights, key=lambda x: x["startTime"]):
-        fid, fs, fe = f["id"], f["startTime"], f["endTime"]
+    for f in sorted(fights, key=lambda x: x.get("startTime") or 0):
+        b = fight_bounds(f)
+        if b is None:
+            print(f"  [skip] malformed fight {f.get('id')} {f.get('name','?')}: missing id/start/end", flush=True)
+            continue
+        fid, fs, fe = b
         if be.done(code, fid, "extras"):
             continue
         n = 0
@@ -613,13 +637,17 @@ def _trash_one(be, code):
     fights = unwrap(gql(be, q), "reportData", "report", "fights") or []
     trash = [f for f in fights if not f.get("encounterID")]
     print(f"{code}: {len(trash)} trash fights")
-    for f in sorted(trash, key=lambda x: x["startTime"]):
-        fid, fs, fe = f["id"], f["startTime"], f["endTime"]
+    for f in sorted(trash, key=lambda x: x.get("startTime") or 0):
+        b = fight_bounds(f)
+        if b is None:
+            print(f"  [skip] malformed fight {f.get('id')} {f.get('name','?')}: missing id/start/end", flush=True)
+            continue
+        fid, fs, fe = b
         t = fetch_table(be, code, fid, fs, fe, "Deaths")
         deaths = []
         for d in t.get("data", {}).get("entries", []):
             ts = d.get("timestamp") or 0
-            kb = d.get("killingBlow") or {}
+            kb = killing_blow(d)
             deaths.append({"name": d.get("name"),
                            "ts_rel": (ts - fs) if ts > (fe - fs) else ts,
                            "ability": kb.get("name")})

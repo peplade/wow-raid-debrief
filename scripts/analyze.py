@@ -34,7 +34,7 @@ import sys
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from wcl import (Backend, fmt_dur, gql, load_config, load_env, report_codes,
+from wcl import (Backend, fmt_dur, gql, killing_blow, load_config, load_env, report_codes,
                  unwrap, workdir_from_args)
 from ingest import RAID_CDS
 
@@ -221,7 +221,7 @@ def cmd_deaths(be, cfg, args):
             for ph in phs:
                 if ph["t"] <= t_rel:
                     cur_phase = ph["phase"]
-            kb = d.get("killingBlow") or {}
+            kb = killing_blow(d)
             dmg = d.get("damage") or {}
             win_abs = [{"name": ab.get("name"), "total": ab.get("total"),
                         "hits": ab.get("totalUses") or ab.get("hitCount")}
@@ -751,7 +751,7 @@ def boss_digest(be, cfg, enc_id, diff):
                 "SELECT actor_id, ts_rel, payload FROM deep_death_recap "
                 "WHERE report=? AND fight_id=? ORDER BY death_seq", (code, fid)):
             d = json.loads(r["payload"])
-            kb = d.get("killingBlow") or {}
+            kb = killing_blow(d)
             o["deaths"].append({
                 "t": r["ts_rel"] / 1000.0,
                 "player": (P.get(r["actor_id"]) or {}).get("player_name")

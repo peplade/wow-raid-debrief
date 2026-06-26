@@ -3,6 +3,55 @@
 All notable changes to this skill. Format: [Keep a Changelog](https://keepachangelog.com),
 newest first. Every lesson backported from real raid-night use gets an entry.
 
+## [2.3.0] — 2026-06-26
+
+Cross-pollinated from the player-CR sibling pipeline (`wow-player-debrief`): two gate
+mechanisms it had and this skill lacked, a shared bug it exposed, and ingest hardening.
+(The flow is mostly this skill → the sibling; this is the genuine backflow.)
+
+### Added — automated re-derivation gate with canary claims (`scripts/verify.py`)
+- New machine gate (`SKILL.md` Stage 4) that RE-derives the digest headline numbers
+  straight from `raid.db` — per-boss pulls + kill durations, raw and qualified
+  (invariant 6) deaths, avoidable damage from `deep_dmg_taken.amount` (NOT the poisoned
+  WCL graph, see 1.2.13), top-parse refs — and fails **NO-GO** on any mismatch. The
+  digests must trace to the events, never the reverse. Seeded with **canary claims**
+  (`--canaries`, deliberately wrong values): every canary must be flagged or the gate is
+  **VOID** — proof the checker has teeth, not a lazy pass. Read-only on raid.db; writes
+  only `verification.md`. Validated on a real consolidated SoO night: GO (0 blocker, 526
+  avoidable entries re-derived with zero mismatch), 7/7 canaries caught, true-value
+  canaries → VOID, digest tampering → NO-GO.
+
+### Added — bundled adversarial reviewer agent (`agents/wow-cr-verifier.md`)
+- The adversarial CR verifier now ships INSIDE the repo (copy to `~/.claude/agents/`), so
+  a cloner gets the gate, not just a mention of it. It re-reads the CR + artifacts,
+  re-checks every number against its source and every reproach against the trap classes,
+  and emits BLOCKER/FIX/OPEN-QUESTION/MISS/OK + GO/NO-GO into `cr-verification.md`. Wired
+  into `SKILL.md` Stage 8 as a pre-delivery pass (no delivery with an open BLOCKER).
+  Repo-relative (points at `references/`, no private paths).
+
+### Added — active mechanic-classification audit (`scripts/classify_audit.py`)
+- Automates the machine half of trap class I (the manual cross-check from 1.2.8): per
+  AREA mechanic (`target:all`), measures the median distinct PLAYER targets per ~2s wave
+  from `deep_dmg_taken` and flags where it contradicts the static `mechanics_ref` class
+  (labelled avoidable but whole-raid → raid-wide CD; or the reverse). Advisory (writes
+  `digests/analysis/classify_audit.json`, never edits the ref); confirm against Wowhead
+  before re-labelling; low-sample mechanics listed as inconclusive, never dropped. On a
+  real SoO night it caught Falling Ash labelled `avoidable` but measured raid-wide
+  20.5/25, and Ironstorm `unavoidable` but 2/25 (dodgeable) — zero regression on
+  correctly-labelled mechanics. `SKILL.md` Stage 5.
+
+### Fixed — `killingBlow` str/dict crash (shared bug, exposed by the sibling pipeline)
+- WCL `killingBlow` can be a dict, a bare ability-name str, or None. The
+  `kb = d.get("killingBlow") or {}` idiom let a truthy str slip through, then `kb.get(...)`
+  raised `AttributeError` and aborted ingest. New `wcl.killing_blow()` helper always
+  returns a dict; applied at all 4 sites (`ingest.py` ×2, `analyze.py` ×2).
+
+### Hardened — malformed-report resilience (`ingest.py`)
+- A deleted/private/anonymized report in a multi-night ID no longer aborts the whole
+  ingest with a cryptic KeyError: report headers missing `startTime` fail loud with an
+  actionable message; fights/phases missing id/start/end are skipped with a logged
+  warning (new `fight_bounds()` helper) instead of crashing.
+
 ## [2.2.0] — 2026-06-22
 
 Backported from the EdR week-3 consolidated CR (Siege of Orgrimmar 25).

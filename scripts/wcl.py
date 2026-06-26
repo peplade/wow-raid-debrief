@@ -83,6 +83,19 @@ def report_codes(cfg):
     return list(codes)
 
 
+def killing_blow(d):
+    """WCL `killingBlow` may be a dict ({name, guid, ...}), a bare ability-name
+    str, or None depending on endpoint/version. Always return a dict so callers
+    can `.get("name")`/`.get("guid")` safely. A truthy str slips past the old
+    `… or {}` idiom and crashed `.get` with AttributeError — this guards it."""
+    kb = d.get("killingBlow")
+    if isinstance(kb, dict):
+        return kb
+    if isinstance(kb, str):
+        return {"name": kb}
+    return {}
+
+
 # -------------------------------------------------------------------- backend
 
 class Backend:
